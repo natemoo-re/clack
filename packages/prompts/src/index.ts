@@ -174,15 +174,13 @@ type Option<Value> = Value extends Primitive
 	? { value: Value; label?: string; hint?: string }
 	: { value: Value; label: string; hint?: string };
 
-export interface SelectOptions<Options extends Option<Value>[], Value> {
+export interface SelectOptions<Value> {
 	message: string;
-	options: Options;
+	options: Option<Value>[];
 	initialValue?: Value;
 }
 
-export const select = <Options extends Option<Value>[], Value>(
-	opts: SelectOptions<Options, Value>
-) => {
+export const select = <Value>(opts: SelectOptions<Value>) => {
 	const opt = (option: Option<Value>, state: 'inactive' | 'active' | 'selected' | 'cancelled') => {
 		const label = option.label ?? String(option.value);
 		if (state === 'active') {
@@ -221,9 +219,7 @@ export const select = <Options extends Option<Value>[], Value>(
 	}).prompt() as Promise<Value | symbol>;
 };
 
-export const selectKey = <Options extends Option<Value>[], Value extends string>(
-	opts: SelectOptions<Options, Value>
-) => {
+export const selectKey = <Value extends string>(opts: SelectOptions<Value>) => {
 	const opt = (
 		option: Option<Value>,
 		state: 'inactive' | 'active' | 'selected' | 'cancelled' = 'inactive'
@@ -269,16 +265,14 @@ export const selectKey = <Options extends Option<Value>[], Value extends string>
 	}).prompt() as Promise<Value | symbol>;
 };
 
-export interface MultiSelectOptions<Options extends Option<Value>[], Value> {
+export interface MultiSelectOptions<Value> {
 	message: string;
-	options: Options;
+	options: Option<Value>[];
 	initialValues?: Value[];
 	required?: boolean;
 	cursorAt?: Value;
 }
-export const multiselect = <Options extends Option<Value>[], Value>(
-	opts: MultiSelectOptions<Options, Value>
-) => {
+export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 	const opt = (
 		option: Option<Value>,
 		state: 'inactive' | 'active' | 'selected' | 'active-selected' | 'submitted' | 'cancelled'
@@ -387,16 +381,14 @@ export const multiselect = <Options extends Option<Value>[], Value>(
 	}).prompt() as Promise<Value[] | symbol>;
 };
 
-export interface GroupMultiSelectOptions<Options extends Option<Value>[], Value> {
+export interface GroupMultiSelectOptions<Value> {
 	message: string;
-	options: Record<string, Options>;
+	options: Record<string, Option<Value>[]>;
 	initialValues?: Value[];
 	required?: boolean;
 	cursorAt?: Value;
 }
-export const groupMultiselect = <Options extends Option<Value>[], Value>(
-	opts: GroupMultiSelectOptions<Options, Value>
-) => {
+export const groupMultiselect = <Value>(opts: GroupMultiSelectOptions<Value>) => {
 	const opt = (
 		option: Option<Value>,
 		state:
