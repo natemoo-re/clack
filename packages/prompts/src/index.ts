@@ -9,6 +9,7 @@ import {
 	SelectPrompt,
 	State,
 	TextPrompt,
+	Validator,
 } from '@clack/core';
 import isUnicodeSupported from 'is-unicode-supported';
 import color from 'picocolors';
@@ -19,6 +20,7 @@ export { isCancel } from '@clack/core';
 const unicode = isUnicodeSupported();
 const s = (c: string, fallback: string) => (unicode ? c : fallback);
 const S_STEP_ACTIVE = s('◆', '*');
+const S_STEP_VALIDATE = S_STEP_ACTIVE;
 const S_STEP_CANCEL = s('■', 'x');
 const S_STEP_ERROR = s('▲', 'x');
 const S_STEP_SUBMIT = s('◇', 'o');
@@ -49,6 +51,8 @@ const symbol = (state: State) => {
 		case 'initial':
 		case 'active':
 			return color.cyan(S_STEP_ACTIVE);
+		case 'validate':
+			return color.cyan(S_STEP_VALIDATE);
 		case 'cancel':
 			return color.red(S_STEP_CANCEL);
 		case 'error':
@@ -63,7 +67,7 @@ export interface TextOptions {
 	placeholder?: string;
 	defaultValue?: string;
 	initialValue?: string;
-	validate?: (value: string) => string | void;
+	validate?: Validator<string>;
 }
 export const text = (opts: TextOptions) => {
 	return new TextPrompt({
@@ -79,6 +83,10 @@ export const text = (opts: TextOptions) => {
 			const value = !this.value ? placeholder : this.valueWithCursor;
 
 			switch (this.state) {
+				case 'validate':
+					return `${title}${color.cyan(S_BAR)}  ${value}\n${color.cyan(S_BAR_END)}  ${color.dim(
+						'Validating...'
+					)}\n`;
 				case 'error':
 					return `${title.trim()}\n${color.yellow(S_BAR)}  ${value}\n${color.yellow(
 						S_BAR_END
@@ -99,7 +107,7 @@ export const text = (opts: TextOptions) => {
 export interface PasswordOptions {
 	message: string;
 	mask?: string;
-	validate?: (value: string) => string | void;
+	validate?: Validator<string>;
 }
 export const password = (opts: PasswordOptions) => {
 	return new PasswordPrompt({
@@ -111,6 +119,10 @@ export const password = (opts: PasswordOptions) => {
 			const masked = this.masked;
 
 			switch (this.state) {
+				case 'validate':
+					return `${title}${color.cyan(S_BAR)}  ${masked}\n${color.cyan(S_BAR_END)}  ${color.dim(
+						'Validating...'
+					)}\n`;
 				case 'error':
 					return `${title.trim()}\n${color.yellow(S_BAR)}  ${masked}\n${color.yellow(
 						S_BAR_END

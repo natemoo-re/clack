@@ -7,6 +7,8 @@ import { WriteStream } from 'node:tty';
 import { cursor, erase } from 'sisteransi';
 import wrap from 'wrap-ansi';
 
+const VALIDATION_STATE_DELAY = 400;
+
 function diffLines(a: string, b: string) {
 	if (a === b) return;
 
@@ -19,6 +21,26 @@ function diffLines(a: string, b: string) {
 	}
 
 	return diff;
+}
+
+function raceTimeout<Value>(
+	promise: Promise<Value>,
+	{ onTimeout, delay }: { onTimeout(): void; delay: number }
+) {
+	let timer: NodeJS.Timeout;
+
+	return Promise.race([
+		new Promise<void>((resolve) => {
+			timer = setTimeout(() => {
+				onTimeout();
+				resolve();
+			}, delay);
+		}),
+		promise.then((value) => {
+			clearTimeout(timer);
+			return value;
+		}),
+	]);
 }
 
 const cancel = Symbol('clack:cancel');
@@ -38,17 +60,21 @@ const aliases = new Map([
 ]);
 const keys = new Set(['up', 'down', 'left', 'right', 'space', 'enter']);
 
+export interface Validator<Value = any> {
+	(value: Value): string | void | Promise<string | void>;
+}
+
 export interface PromptOptions<Self extends Prompt> {
 	render(this: Omit<Self, 'prompt'>): string | void;
 	placeholder?: string;
 	initialValue?: any;
-	validate?: ((value: any) => string | void) | undefined;
+	validate?: Validator;
 	input?: Readable;
 	output?: Writable;
 	debug?: boolean;
 }
 
-export type State = 'initial' | 'active' | 'cancel' | 'submit' | 'error';
+export type State = 'initial' | 'active' | 'cancel' | 'validate' | 'submit' | 'error';
 
 export default class Prompt {
 	protected input: Readable;
@@ -153,7 +179,7 @@ export default class Prompt {
 		this.subscribers.clear();
 	}
 
-	private onKeypress(char: string, key?: Key) {
+	private async onKeypress(char: string, key?: Key) {
 		if (this.state === 'error') {
 			this.state = 'active';
 		}
@@ -172,7 +198,17 @@ export default class Prompt {
 
 		if (key?.name === 'return') {
 			if (this.opts.validate) {
-				const problem = this.opts.validate(this.value);
+				this.state = 'validate';
+				const validation = Promise.resolve(this.opts.validate(this.value));
+				// Delay rendering of validation state.
+				// If validation resolves first, render will be cancelled.
+				await raceTimeout(validation, {
+					onTimeout: () => {
+						this.render();
+					},
+					delay: VALIDATION_STATE_DELAY,
+				});
+				const problem = await validation;
 				if (problem) {
 					this.error = problem;
 					this.state = 'error';
