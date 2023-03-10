@@ -654,15 +654,19 @@ export type PromptGroupAwaitedReturn<T> = {
 
 export interface PromptGroupOptions<T> {
 	/**
-	 * Control how the group can be canceld
-	 * if one of the prompts is canceld.
+	 * Control how the group can be canceled
+	 * if one of the prompts is canceled.
 	 */
-	onCancel?: (opts: { results: Partial<PromptGroupAwaitedReturn<T>> }) => void;
+	onCancel?: (opts: { results: Prettify<Partial<PromptGroupAwaitedReturn<T>>> }) => void;
 }
+
+type Prettify<T> = {
+	[P in keyof T]: T[P];
+} & {};
 
 export type PromptGroup<T> = {
 	[P in keyof T]: (opts: {
-		results: Partial<PromptGroupAwaitedReturn<T>>;
+		results: Prettify<Partial<PromptGroupAwaitedReturn<Omit<T, P>>>>;
 	}) => void | Promise<T[P] | void>;
 };
 
@@ -673,7 +677,7 @@ export type PromptGroup<T> = {
 export const group = async <T>(
 	prompts: PromptGroup<T>,
 	opts?: PromptGroupOptions<T>
-): Promise<PromptGroupAwaitedReturn<T>> => {
+): Promise<Prettify<PromptGroupAwaitedReturn<T>>> => {
 	const results = {} as any;
 	const promptNames = Object.keys(prompts);
 
