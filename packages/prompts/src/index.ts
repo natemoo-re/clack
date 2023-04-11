@@ -532,6 +532,15 @@ export const groupMultiselect = <Options extends Option<Value>[], Value>(
 };
 
 const strip = (str: string) => str.replace(ansiRegex(), '');
+const strLength = (str: string) => {
+	if (!str) return 0;
+	let len = 0;
+	const arr = [...str];
+	for (const char of arr) {
+		len += char.charCodeAt(0) > 127 || char.charCodeAt(0) === 94 ? 2 : 1;
+	}
+	return len;
+};
 export const note = (message = '', title = '') => {
 	const lines = `\n${message}\n`.split('\n');
 	const len =
@@ -540,19 +549,20 @@ export const note = (message = '', title = '') => {
 				ln = strip(ln);
 				return ln.length > sum ? ln.length : sum;
 			}, 0),
-			strip(title).length
+			strLength(strip(title)),
+			strLength(strip(message))
 		) + 2;
 	const msg = lines
 		.map(
 			(ln) =>
-				`${color.gray(S_BAR)}  ${color.dim(ln)}${' '.repeat(len - strip(ln).length)}${color.gray(
-					S_BAR
-				)}`
+				`${color.gray(S_BAR)}  ${color.dim(ln)}${' '.repeat(
+					len - strLength(strip(ln))
+				)}${color.gray(S_BAR)}`
 		)
 		.join('\n');
 	process.stdout.write(
 		`${color.gray(S_BAR)}\n${color.green(S_STEP_SUBMIT)}  ${color.reset(title)} ${color.gray(
-			S_BAR_H.repeat(Math.max(len - title.length - 1, 1)) + S_CORNER_TOP_RIGHT
+			S_BAR_H.repeat(Math.max(len - strLength(title) - 1, 1)) + S_CORNER_TOP_RIGHT
 		)}\n${msg}\n${color.gray(S_CONNECT_LEFT + S_BAR_H.repeat(len + 2) + S_CORNER_BOTTOM_RIGHT)}\n`
 	);
 };
