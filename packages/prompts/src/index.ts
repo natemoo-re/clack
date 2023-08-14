@@ -72,7 +72,17 @@ export const text = (opts: TextOptions) => {
 		defaultValue: opts.defaultValue,
 		initialValue: opts.initialValue,
 		render() {
-			const title = `${color.gray(S_BAR)}\n${symbol(this.state)}  ${opts.message}\n`;
+			const title = [
+				color.gray(S_BAR),
+				this.format(opts.message, {
+					firstLine: {
+						start: symbol(this.state),
+					},
+					default: {
+						start: color.gray(S_BAR),
+					},
+				}),
+			].join('\n');
 			const placeholder = opts.placeholder
 				? color.inverse(opts.placeholder[0]) + color.dim(opts.placeholder.slice(1))
 				: color.inverse(color.hidden('_'));
@@ -80,17 +90,61 @@ export const text = (opts: TextOptions) => {
 
 			switch (this.state) {
 				case 'error':
-					return `${title.trim()}\n${color.yellow(S_BAR)}  ${value}\n${color.yellow(
-						S_BAR_END
-					)}  ${color.yellow(this.error)}\n`;
+					return [
+						title,
+						this.format(value, {
+							default: {
+								start: color.yellow(S_BAR),
+							},
+							lastLine: {
+								start: color.yellow(S_BAR_END),
+							},
+						}),
+						this.format(this.error, {
+							default: {
+								start: color.yellow(S_BAR),
+								style: color.yellow,
+							},
+							lastLine: {
+								start: color.yellow(S_BAR_END),
+							},
+						}),
+					].join('\n');
 				case 'submit':
-					return `${title}${color.gray(S_BAR)}  ${color.dim(this.value || opts.placeholder)}`;
+					return [
+						title,
+						this.format(this.value ?? opts.placeholder, {
+							default: {
+								start: color.gray(S_BAR),
+								style: color.dim,
+							},
+						}),
+					].join('\n');
 				case 'cancel':
-					return `${title}${color.gray(S_BAR)}  ${color.strikethrough(
-						color.dim(this.value ?? '')
-					)}${this.value?.trim() ? '\n' + color.gray(S_BAR) : ''}`;
+					return [
+						title,
+						this.format(this.value ?? '', {
+							default: {
+								start: color.gray(S_BAR),
+								style: (line) => color.strikethrough(color.dim(line)),
+							},
+							lastLine: {
+								start: color.gray(S_BAR_END),
+							},
+						}),
+					].join('\n');
 				default:
-					return `${title}${color.cyan(S_BAR)}  ${value}\n${color.cyan(S_BAR_END)}\n`;
+					return [
+						title,
+						this.format(value, {
+							default: {
+								start: color.cyan(S_BAR),
+							},
+							lastLine: {
+								start: color.cyan(S_BAR_END),
+							},
+						}),
+					].join('\n');
 			}
 		},
 	}).prompt() as Promise<string | symbol>;
