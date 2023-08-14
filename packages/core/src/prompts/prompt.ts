@@ -316,43 +316,56 @@ export default class Prompt {
 		const newLine = getLineOptions('newLine');
 		const lastLine = getLineOptions('lastLine');
 
+		const emptySlots = Math.max(
+			strLength(firstLine.start + firstLine.end),
+			strLength(newLine.start + newLine.end),
+			strLength(lastLine.start + lastLine.end)
+		);
 		const terminalWidth = process.stdout.columns || 80;
-		const maxWidth = options?.maxWidth ?? terminalWidth - 2;
+		const maxWidth = (options?.maxWidth ?? terminalWidth) - emptySlots;
 
 		const formattedLines: string[] = [];
 		const paragraphs = text.split(/\n/g);
 
 		for (let i = 0; i < paragraphs.length; i++) {
-			const opt = <TPosition extends Exclude<keyof FormatLineOptions, 'sides'>>(
-				position: TPosition
-			): FormatLineOptions[TPosition] => {
-				return (
-					i === 0
-						? firstLine[position]
-						: i + 1 === paragraphs.length
-						? lastLine[position]
-						: newLine[position]
-				) as FormatLineOptions[TPosition];
-			};
-			const startLine = opt('start');
-			const endLine = opt('end');
-			const styleLine = opt('style');
 			let currentLine = ' ';
 
 			const words = paragraphs[i].split(/\s/g);
 			for (const word of words) {
-				if (strLength(startLine + currentLine + word + endLine) + 3 <= maxWidth) {
+				if (strLength(currentLine + word) + emptySlots + 3 <= maxWidth) {
 					currentLine += ` ${word}`;
 				} else {
-					formattedLines.push([startLine, styleLine(currentLine), endLine].join(' '));
+					formattedLines.push(currentLine);
 					currentLine = word;
 				}
 			}
 
-			formattedLines.push([startLine, styleLine(currentLine), endLine].join(' '));
+			formattedLines.push(currentLine);
 		}
 
-		return formattedLines.join('\n');
+		return formattedLines
+			.map((line, i, ar) => {
+				const opt = <TPosition extends Exclude<keyof FormatLineOptions, 'sides'>>(
+					position: TPosition
+				): FormatLineOptions[TPosition] => {
+					return (
+						i === 0 && ar.length === 1
+							? options?.firstLine?.[position] ??
+							  options?.lastLine?.[position] ??
+							  firstLine[position]
+							: i === 0
+							? firstLine[position]
+							: i + 1 === ar.length
+							? lastLine[position]
+							: newLine[position]
+					) as FormatLineOptions[TPosition];
+				};
+				const startLine = opt('start');
+				const endLine = opt('end');
+				const styleLine = opt('style');
+				return [startLine, styleLine(line), endLine].join(' ');
+			})
+			.join('\n');
 	}
 
 	private _prevFrame = '';
