@@ -316,24 +316,36 @@ export default class Prompt {
 		const newLine = getLineOptions('newLine');
 		const lastLine = getLineOptions('lastLine');
 
-		const emptySlots = Math.max(
-			strLength(firstLine.start + firstLine.end),
-			strLength(newLine.start + newLine.end),
-			strLength(lastLine.start + lastLine.end)
-		);
+		const emptySlots =
+			Math.max(
+				strLength(firstLine.start + firstLine.end),
+				strLength(newLine.start + newLine.end),
+				strLength(lastLine.start + lastLine.end)
+			) + 2;
 		const terminalWidth = process.stdout.columns || 80;
-		const maxWidth = (options?.maxWidth ?? terminalWidth) - emptySlots;
+		const maxWidth = options?.maxWidth ?? terminalWidth;
 
 		const formattedLines: string[] = [];
 		const paragraphs = text.split(/\n/g);
 
 		for (let i = 0; i < paragraphs.length; i++) {
-			let currentLine = ' ';
+			let currentLine = '';
 
 			const words = paragraphs[i].split(/\s/g);
 			for (const word of words) {
-				if (strLength(currentLine + word) + emptySlots + 3 <= maxWidth) {
+				if (strLength(currentLine + word) + emptySlots + 1 <= maxWidth) {
 					currentLine += ` ${word}`;
+				} else if (strLength(word) + emptySlots >= maxWidth) {
+					const splitIndex = maxWidth - strLength(currentLine) - emptySlots - 1;
+					formattedLines.push(currentLine + ' ' + word.slice(0, splitIndex));
+
+					const chunkLength = maxWidth - emptySlots;
+					let chunk = word.slice(splitIndex);
+					while (strLength(chunk) >= chunkLength) {
+						formattedLines.push(chunk.slice(0, chunkLength));
+						chunk = chunk.slice(chunkLength);
+					}
+					currentLine = chunk;
 				} else {
 					formattedLines.push(currentLine);
 					currentLine = word;

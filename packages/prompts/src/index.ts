@@ -96,9 +96,6 @@ export const text = (opts: TextOptions) => {
 							default: {
 								start: color.yellow(S_BAR),
 							},
-							lastLine: {
-								start: color.yellow(S_BAR_END),
-							},
 						}),
 						this.format(this.error, {
 							default: {
@@ -128,22 +125,25 @@ export const text = (opts: TextOptions) => {
 								start: color.gray(S_BAR),
 								style: (line) => color.strikethrough(color.dim(line)),
 							},
-							lastLine: {
-								start: color.gray(S_BAR_END),
-							},
 						}),
 					].join('\n');
 				default:
 					return [
-						title,
+						color.gray(S_BAR),
+						this.format(opts.message, {
+							firstLine: {
+								start: symbol(this.state),
+							},
+							default: {
+								start: color.cyan(S_BAR),
+							},
+						}),
 						this.format(value, {
 							default: {
 								start: color.cyan(S_BAR),
 							},
-							lastLine: {
-								start: color.cyan(S_BAR_END),
-							},
 						}),
+						color.cyan(S_BAR_END),
 					].join('\n');
 			}
 		},
