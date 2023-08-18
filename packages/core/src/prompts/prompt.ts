@@ -341,7 +341,7 @@ export default class Prompt {
 
 					const chunkLength = maxWidth - emptySlots;
 					let chunk = word.slice(splitIndex);
-					while (strLength(chunk) >= chunkLength) {
+					while (strLength(chunk) > chunkLength) {
 						formattedLines.push(chunk.slice(0, chunkLength));
 						chunk = chunk.slice(chunkLength);
 					}
