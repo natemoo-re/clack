@@ -1,7 +1,7 @@
-import Prompt, { State } from '../prompts/prompt';
-import { TemplateOptions } from './types';
-import * as S from './symbols';
 import color from 'picocolors';
+import Prompt, { State } from '../prompts/prompt';
+import * as S from './symbols';
+import { TemplateOptions } from './types';
 
 const symbol = (state: State) => {
 	switch (state) {

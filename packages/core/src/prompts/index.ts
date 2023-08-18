@@ -1,3 +1,4 @@
+export { block } from '../utils';
 export { default as ConfirmPrompt } from './confirm';
 export { default as GroupMultiSelectPrompt } from './group-multiselect';
 export { default as MultiSelectPrompt } from './multi-select';
@@ -7,4 +8,3 @@ export type { State } from './prompt';
 export { default as SelectPrompt } from './select';
 export { default as SelectKeyPrompt } from './select-key';
 export { default as TextPrompt } from './text';
-export { block } from '../utils';
