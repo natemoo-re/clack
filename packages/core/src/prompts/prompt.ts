@@ -380,7 +380,7 @@ export default class Prompt {
 				const styledLine = leadingSpaceRegex.test(line)
 					? ' ' + styleLine(line.slice(1))
 					: styleLine(line);
-				return [startLine, styleLine(styledLine), endLine].join(' ');
+				return [startLine, styledLine, endLine].join(' ');
 			})
 			.join('\n');
 	}
