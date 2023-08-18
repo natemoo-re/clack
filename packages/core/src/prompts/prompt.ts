@@ -300,7 +300,7 @@ export default class Prompt {
 		): NonNullable<FormatOptions[TLine][TKey]> => {
 			return (
 				key === 'style'
-					? options?.[line]?.[key] ?? ((line) => line)
+					? options?.[line]?.[key] ?? options?.default?.[key] ?? ((line) => line)
 					: options?.[line]?.[key] ?? options?.[line]?.sides ?? options?.default?.[key] ?? ''
 			) as NonNullable<FormatOptions[TLine][TKey]>;
 		};
@@ -328,10 +328,10 @@ export default class Prompt {
 		const formattedLines: string[] = [];
 		const paragraphs = text.split(/\n/g);
 
-		for (let i = 0; i < paragraphs.length; i++) {
+		for (const paragraph of paragraphs) {
+			const words = paragraph.split(/\s/g);
 			let currentLine = '';
 
-			const words = paragraphs[i].split(/\s/g);
 			for (const word of words) {
 				if (strLength(currentLine + word) + emptySlots + 1 <= maxWidth) {
 					currentLine += ` ${word}`;
@@ -341,7 +341,7 @@ export default class Prompt {
 
 					const chunkLength = maxWidth - emptySlots;
 					let chunk = word.slice(splitIndex);
-					while (strLength(chunk) >= chunkLength) {
+					while (strLength(chunk) > chunkLength) {
 						formattedLines.push(chunk.slice(0, chunkLength));
 						chunk = chunk.slice(chunkLength);
 					}
@@ -375,7 +375,12 @@ export default class Prompt {
 				const startLine = opt('start');
 				const endLine = opt('end');
 				const styleLine = opt('style');
-				return [startLine, styleLine(line), endLine].join(' ');
+				// only format the line without the leading space.
+				const leadingSpaceRegex = /^\s/;
+				const styledLine = leadingSpaceRegex.test(line)
+					? ' ' + styleLine(line.slice(1))
+					: styleLine(line);
+				return [startLine, styleLine(styledLine), endLine].join(' ');
 			})
 			.join('\n');
 	}
