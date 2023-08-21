@@ -441,7 +441,7 @@ export const groupMultiselect = <Options extends Option<Value>[], Value>(
 				)}`;
 		},
 		render() {
-			let title = `${color.gray(S.BAR)}\n${symbol(this.state)}  ${opts.message}\n`;
+			let title = `${color.gray(S.BAR)}\n${symbol(this.state)}  ${opts.message}`;
 
 			switch (this.state) {
 				case 'submit': {
