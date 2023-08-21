@@ -350,28 +350,24 @@ export const selectKey = <Options extends Option<Value>[], Value extends string>
 		options: opts.options,
 		initialValue: opts.initialValue,
 		render() {
-			let value: string;
+			const title = `${color.gray(S_BAR)}\n${symbol(this.state)} ${opts.message}`;
 
 			switch (this.state) {
 				case 'submit':
-					value = opt(this.options.find((opt) => opt.value === this.value)!, 'selected');
-					break;
+					return `${title}\n${color.gray(S_BAR)}  ${opt(
+						this.options.find((opt) => opt.value === this.value)!,
+						'selected'
+					)}`;
 				case 'cancel':
-					value = opt(this.options[0], 'cancelled');
-					break;
+					return `${title}\n${color.gray(S_BAR)}  ${opt(
+						this.options[0],
+						'cancelled'
+					)}\n${color.gray(S_BAR)}`;
 				default:
-					value = this.options
+					return `${title}\n${color.cyan(S_BAR)}  ${this.options
 						.map((option, i) => opt(option, i === this.cursor ? 'active' : 'inactive'))
-						.join('\n');
-					break;
+						.join(`\n${color.cyan(S_BAR)}  `)}\n${color.cyan(S_BAR_END)}\n`;
 			}
-
-			return applyTheme({
-				ctx: this,
-				message: opts.message,
-				value,
-				valueWithCursor: undefined,
-			});
 		},
 	}).prompt() as Promise<Value | symbol>;
 };
@@ -567,21 +563,7 @@ export const groupMultiselect = <Options extends Option<Value>[], Value>(
 				)}`;
 		},
 		render() {
-			const symbol = (state: State) => {
-				switch (state) {
-					case 'initial':
-					case 'active':
-						return color.cyan(S_STEP_ACTIVE);
-					case 'cancel':
-						return color.red(S_STEP_CANCEL);
-					case 'error':
-						return color.yellow(S_STEP_ERROR);
-					case 'submit':
-						return color.green(S_STEP_SUBMIT);
-				}
-			};
-
-			let title = `${color.gray(S_BAR)}\n${symbol(this.state)}  ${opts.message}\n`;
+			let title = `${color.gray(S_BAR)}\n${symbol(this.state)}  ${opts.message}`;
 
 			switch (this.state) {
 				case 'submit': {
