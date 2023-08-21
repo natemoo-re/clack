@@ -350,7 +350,7 @@ export const selectKey = <Options extends Option<Value>[], Value extends string>
 		options: opts.options,
 		initialValue: opts.initialValue,
 		render() {
-			const title = `${color.gray(S_BAR)}\n${symbol(this.state)} ${opts.message}`;
+			const title = `${color.gray(S_BAR)}\n${symbol(this.state)}  ${opts.message}`;
 
 			switch (this.state) {
 				case 'submit':
@@ -429,7 +429,7 @@ export const multiselect = <Options extends Option<Value>[], Value>(
 					value = this.options
 						.filter(({ value }) => this.value.includes(value))
 						.map((option) => opt(option, 'submitted'))
-						.join(color.dim(', '));
+						.join(color.dim(', ')) || color.dim('none');
 					break;
 				}
 				case 'cancel': {
@@ -468,7 +468,6 @@ export const multiselect = <Options extends Option<Value>[], Value>(
 						.join('\n');
 					break;
 				}
-
 				default: {
 					value = this.options
 						.map((option, i) => {
