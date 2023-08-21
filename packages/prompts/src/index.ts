@@ -11,13 +11,148 @@ import {
 	State,
 	TextPrompt,
 } from '@clack/core';
-import { defaultTheme, S } from '@clack/core/themes';
 import isUnicodeSupported from 'is-unicode-supported';
 import color from 'picocolors';
 import { cursor, erase } from 'sisteransi';
 
 const unicode = isUnicodeSupported();
+const s = (c: string, fallback: string) => (unicode ? c : fallback);
+
+const S_STEP_ACTIVE = s('◆', '*');
+const S_STEP_CANCEL = s('■', 'x');
+const S_STEP_ERROR = s('▲', 'x');
+const S_STEP_SUBMIT = s('◇', 'o');
+
+const S_BAR_START = s('┌', 'T');
+const S_BAR = s('│', '|');
+const S_BAR_END = s('└', '—');
+
+const S_RADIO_ACTIVE = s('●', '>');
+const S_RADIO_INACTIVE = s('○', ' ');
+const S_CHECKBOX_ACTIVE = s('◻', '[•]');
+const S_CHECKBOX_SELECTED = s('◼', '[+]');
+const S_CHECKBOX_INACTIVE = s('◻', '[ ]');
+const S_PASSWORD_MASK = s('▪', '•');
+
+const S_BAR_H = s('─', '-');
+const S_CORNER_TOP_RIGHT = s('╮', '+');
+const S_CONNECT_LEFT = s('├', '+');
+const S_CORNER_BOTTOM_RIGHT = s('╯', '+');
+
+const S_INFO = s('●', '•');
+const S_SUCCESS = s('◆', '*');
+const S_WARN = s('▲', '!');
+const S_ERROR = s('■', 'x');
+
+const symbol = (state: State) => {
+	switch (state) {
+		case 'initial':
+		case 'active':
+			return color.cyan(S_STEP_ACTIVE);
+		case 'cancel':
+			return color.red(S_STEP_CANCEL);
+		case 'error':
+			return color.yellow(S_STEP_ERROR);
+		case 'submit':
+			return color.green(S_STEP_SUBMIT);
+	}
+};
+
 const format = Prompt.prototype.format;
+
+interface ThemeParams {
+	ctx: Omit<Prompt, 'prompt'>;
+	message: string;
+	value: string;
+	valueWithCursor: string | undefined;
+	placeholder?: string | undefined;
+	error?: string | undefined;
+}
+
+function applyTheme(data: ThemeParams): string {
+	const { ctx, message } = data;
+
+	const title = [
+		color.gray(S_BAR),
+		format(message, {
+			firstLine: {
+				start: symbol(ctx.state),
+			},
+			default: {
+				start: color.gray(S_BAR),
+			},
+		}),
+	].join('\n');
+
+	const placeholder = data.placeholder
+		? color.inverse(data.placeholder[0]) + color.dim(data.placeholder.slice(1))
+		: color.inverse(color.hidden('_'));
+
+	const value = data.value ?? '';
+
+	switch (ctx.state) {
+		case 'cancel':
+			return [
+				title,
+				format(value, {
+					default: {
+						start: color.gray(S_BAR),
+						style: (line) => color.strikethrough(color.dim(line)),
+					},
+				}),
+			].join('\n');
+
+		case 'error':
+			return [
+				title,
+				format(value, {
+					default: {
+						start: color.yellow(S_BAR),
+					},
+				}),
+				data.error ??
+					format(ctx.error, {
+						default: {
+							start: color.yellow(S_BAR),
+							style: color.yellow,
+						},
+						lastLine: {
+							start: color.yellow(S_BAR_END),
+						},
+					}),
+			].join('\n');
+
+		case 'submit':
+			return [
+				title,
+				format(value, {
+					default: {
+						start: color.gray(S_BAR),
+						style: color.dim,
+					},
+				}),
+			].join('\n');
+
+		default:
+			return [
+				color.gray(S_BAR),
+				format(message, {
+					firstLine: {
+						start: symbol(ctx.state),
+					},
+					default: {
+						start: color.cyan(S_BAR),
+					},
+				}),
+				format(data.placeholder && !data.value ? placeholder : data.valueWithCursor ?? value, {
+					default: {
+						start: color.cyan(S_BAR),
+					},
+				}),
+				color.cyan(S_BAR_END),
+			].join('\n');
+	}
+}
 
 export interface TextOptions {
 	message: string;
@@ -33,7 +168,7 @@ export const text = (opts: TextOptions) => {
 		defaultValue: opts.defaultValue,
 		initialValue: opts.initialValue,
 		render() {
-			return defaultTheme({
+			return applyTheme({
 				ctx: this,
 				message: opts.message,
 				value: this.value,
@@ -52,9 +187,9 @@ export interface PasswordOptions {
 export const password = (opts: PasswordOptions) => {
 	return new PasswordPrompt({
 		validate: opts.validate,
-		mask: opts.mask ?? S.PASSWORD_MASK,
+		mask: opts.mask ?? S_PASSWORD_MASK,
 		render() {
-			return defaultTheme({
+			return applyTheme({
 				ctx: this,
 				message: opts.message,
 				value: this.value,
@@ -80,10 +215,10 @@ export const confirm = (opts: ConfirmOptions) => {
 		render() {
 			const opt = (state: boolean, message: string): string => {
 				return state
-					? `${color.green(S.RADIO_ACTIVE)} ${message}`
-					: `${color.dim(S.RADIO_INACTIVE)} ${color.dim(message)}`;
+					? `${color.green(S_RADIO_ACTIVE)} ${message}`
+					: `${color.dim(S_RADIO_INACTIVE)} ${color.dim(message)}`;
 			};
-			return defaultTheme({
+			return applyTheme({
 				ctx: this,
 				message: opts.message,
 				value:
@@ -120,7 +255,7 @@ export const select = <Options extends Option<Value>[], Value>(
 	): string => {
 		const label = option.label ?? String(option.value);
 		if (state === 'active') {
-			return `${color.green(S.RADIO_ACTIVE)} ${label} ${
+			return `${color.green(S_RADIO_ACTIVE)} ${label} ${
 				option.hint ? color.dim(`(${option.hint})`) : ''
 			}`;
 		} else if (state === 'selected') {
@@ -128,7 +263,7 @@ export const select = <Options extends Option<Value>[], Value>(
 		} else if (state === 'cancelled') {
 			return `${color.strikethrough(color.dim(label))}`;
 		}
-		return `${color.dim(S.RADIO_INACTIVE)} ${color.dim(label)}`;
+		return `${color.dim(S_RADIO_INACTIVE)} ${color.dim(label)}`;
 	};
 
 	let slidingWindowLocation = 0;
@@ -179,7 +314,7 @@ export const select = <Options extends Option<Value>[], Value>(
 						.join('\n');
 					break;
 			}
-			return defaultTheme({
+			return applyTheme({
 				ctx: this,
 				message: opts.message,
 				value,
@@ -231,7 +366,7 @@ export const selectKey = <Options extends Option<Value>[], Value extends string>
 					break;
 			}
 
-			return defaultTheme({
+			return applyTheme({
 				ctx: this,
 				message: opts.message,
 				value,
@@ -257,21 +392,21 @@ export const multiselect = <Options extends Option<Value>[], Value>(
 	) => {
 		const label = option.label ?? String(option.value);
 		if (state === 'active') {
-			return `${color.cyan(S.CHECKBOX_ACTIVE)} ${label} ${
+			return `${color.cyan(S_CHECKBOX_ACTIVE)} ${label} ${
 				option.hint ? color.dim(`(${option.hint})`) : ''
 			}`;
 		} else if (state === 'selected') {
-			return `${color.green(S.CHECKBOX_SELECTED)} ${color.dim(label)}`;
+			return `${color.green(S_CHECKBOX_SELECTED)} ${color.dim(label)}`;
 		} else if (state === 'cancelled') {
 			return `${color.strikethrough(color.dim(label))}`;
 		} else if (state === 'active-selected') {
-			return `${color.green(S.CHECKBOX_SELECTED)} ${label} ${
+			return `${color.green(S_CHECKBOX_SELECTED)} ${label} ${
 				option.hint ? color.dim(`(${option.hint})`) : ''
 			}`;
 		} else if (state === 'submitted') {
 			return `${color.dim(label)}`;
 		}
-		return `${color.dim(S.CHECKBOX_INACTIVE)} ${color.dim(label)}`;
+		return `${color.dim(S_CHECKBOX_INACTIVE)} ${color.dim(label)}`;
 	};
 
 	return new MultiSelectPrompt({
@@ -316,7 +451,7 @@ export const multiselect = <Options extends Option<Value>[], Value>(
 							.join('\n'),
 						{
 							firstLine: {
-								start: color.yellow(S.BAR_END),
+								start: color.yellow(S_BAR_END),
 							},
 							default: {
 								start: color.hidden('-'),
@@ -354,7 +489,7 @@ export const multiselect = <Options extends Option<Value>[], Value>(
 						.join('\n');
 				}
 			}
-			return defaultTheme({
+			return applyTheme({
 				ctx: this,
 				message: opts.message,
 				value,
@@ -392,28 +527,28 @@ export const groupMultiselect = <Options extends Option<Value>[], Value>(
 		const isItem = typeof (option as any).group === 'string';
 		const next = isItem && (options[options.indexOf(option) + 1] ?? { group: true });
 		const isLast = isItem && (next as any).group === true;
-		const prefix = isItem ? `${isLast ? S.BAR_END : S.BAR} ` : '';
+		const prefix = isItem ? `${isLast ? S_BAR_END : S_BAR} ` : '';
 
 		if (state === 'active') {
-			return `${color.dim(prefix)}${color.cyan(S.CHECKBOX_ACTIVE)} ${label} ${
+			return `${color.dim(prefix)}${color.cyan(S_CHECKBOX_ACTIVE)} ${label} ${
 				option.hint ? color.dim(`(${option.hint})`) : ''
 			}`;
 		} else if (state === 'group-active') {
-			return `${prefix}${color.cyan(S.CHECKBOX_ACTIVE)} ${color.dim(label)}`;
+			return `${prefix}${color.cyan(S_CHECKBOX_ACTIVE)} ${color.dim(label)}`;
 		} else if (state === 'group-active-selected') {
-			return `${prefix}${color.green(S.CHECKBOX_SELECTED)} ${color.dim(label)}`;
+			return `${prefix}${color.green(S_CHECKBOX_SELECTED)} ${color.dim(label)}`;
 		} else if (state === 'selected') {
-			return `${color.dim(prefix)}${color.green(S.CHECKBOX_SELECTED)} ${color.dim(label)}`;
+			return `${color.dim(prefix)}${color.green(S_CHECKBOX_SELECTED)} ${color.dim(label)}`;
 		} else if (state === 'cancelled') {
 			return `${color.strikethrough(color.dim(label))}`;
 		} else if (state === 'active-selected') {
-			return `${color.dim(prefix)}${color.green(S.CHECKBOX_SELECTED)} ${label} ${
+			return `${color.dim(prefix)}${color.green(S_CHECKBOX_SELECTED)} ${label} ${
 				option.hint ? color.dim(`(${option.hint})`) : ''
 			}`;
 		} else if (state === 'submitted') {
 			return `${color.dim(label)}`;
 		}
-		return `${color.dim(prefix)}${color.dim(S.CHECKBOX_INACTIVE)} ${color.dim(label)}`;
+		return `${color.dim(prefix)}${color.dim(S_CHECKBOX_INACTIVE)} ${color.dim(label)}`;
 	};
 
 	return new GroupMultiSelectPrompt({
@@ -436,21 +571,21 @@ export const groupMultiselect = <Options extends Option<Value>[], Value>(
 				switch (state) {
 					case 'initial':
 					case 'active':
-						return color.cyan(S.STEP_ACTIVE);
+						return color.cyan(S_STEP_ACTIVE);
 					case 'cancel':
-						return color.red(S.STEP_CANCEL);
+						return color.red(S_STEP_CANCEL);
 					case 'error':
-						return color.yellow(S.STEP_ERROR);
+						return color.yellow(S_STEP_ERROR);
 					case 'submit':
-						return color.green(S.STEP_SUBMIT);
+						return color.green(S_STEP_SUBMIT);
 				}
 			};
 
-			let title = `${color.gray(S.BAR)}\n${symbol(this.state)}  ${opts.message}\n`;
+			let title = `${color.gray(S_BAR)}\n${symbol(this.state)}  ${opts.message}\n`;
 
 			switch (this.state) {
 				case 'submit': {
-					return `${title}\n${color.gray(S.BAR)}  ${this.options
+					return `${title}\n${color.gray(S_BAR)}  ${this.options
 						.filter(({ value }) => this.value.includes(value))
 						.map((option) => opt(option, 'submitted'))
 						.join(color.dim(', '))}`;
@@ -460,18 +595,18 @@ export const groupMultiselect = <Options extends Option<Value>[], Value>(
 						.filter(({ value }) => this.value.includes(value))
 						.map((option) => opt(option, 'cancelled'))
 						.join(color.dim(', '));
-					return `${title}\n${color.gray(S.BAR)}  ${
-						label.trim() ? `${label}\n${color.gray(S.BAR)}` : ''
+					return `${title}\n${color.gray(S_BAR)}  ${
+						label.trim() ? `${label}\n${color.gray(S_BAR)}` : ''
 					}`;
 				}
 				case 'error': {
 					const footer = this.error
 						.split('\n')
 						.map((ln, i) =>
-							i === 0 ? `${color.yellow(S.BAR_END)}  ${color.yellow(ln)}` : `   ${ln}`
+							i === 0 ? `${color.yellow(S_BAR_END)}  ${color.yellow(ln)}` : `   ${ln}`
 						)
 						.join('\n');
-					return `${title}\n${color.yellow(S.BAR)}  ${this.options
+					return `${title}\n${color.yellow(S_BAR)}  ${this.options
 						.map((option, i, options) => {
 							const selected =
 								this.value.includes(option.value) ||
@@ -492,10 +627,10 @@ export const groupMultiselect = <Options extends Option<Value>[], Value>(
 							}
 							return opt(option, active ? 'active' : 'inactive', options);
 						})
-						.join(`\n${color.yellow(S.BAR)}  `)}\n${footer}\n`;
+						.join(`\n${color.yellow(S_BAR)}  `)}\n${footer}\n`;
 				}
 				default: {
-					return `${title}\n${color.cyan(S.BAR)}  ${this.options
+					return `${title}\n${color.cyan(S_BAR)}  ${this.options
 						.map((option, i, options) => {
 							const selected =
 								this.value.includes(option.value) ||
@@ -516,7 +651,7 @@ export const groupMultiselect = <Options extends Option<Value>[], Value>(
 							}
 							return opt(option, active ? 'active' : 'inactive', options);
 						})
-						.join(`\n${color.cyan(S.BAR)}  `)}\n${color.cyan(S.BAR_END)}\n`;
+						.join(`\n${color.cyan(S_BAR)}  `)}\n${color.cyan(S_BAR_END)}\n`;
 				}
 			}
 		},
@@ -540,7 +675,7 @@ export const note = (message = '', title = '') => {
 	const maxWidth = Math.floor((process.stdout.columns ?? 80) * 0.8);
 	const lines = format(message, {
 		default: {
-			start: color.gray(S.BAR),
+			start: color.gray(S_BAR),
 		},
 		maxWidth: maxWidth - 2,
 	}).split(/\n/g);
@@ -551,21 +686,21 @@ export const note = (message = '', title = '') => {
 	}, 0);
 	const len = Math.min(Math.max(messageLen, titleLen) + 2, maxWidth);
 	const noteBox = [
-		color.gray(S.BAR),
-		`${color.green(S.STEP_SUBMIT)}  ${color.reset(title)} ${color.gray(
-			S.BAR_H.repeat(Math.max(len - titleLen - 3, 0)) + S.CORNER_TOP_RIGHT
+		color.gray(S_BAR),
+		`${color.green(S_STEP_SUBMIT)}  ${color.reset(title)} ${color.gray(
+			S_BAR_H.repeat(Math.max(len - titleLen - 3, 0)) + S_CORNER_TOP_RIGHT
 		)}`,
-		color.gray(S.BAR + ' '.repeat(len) + S.BAR),
+		color.gray(S_BAR + ' '.repeat(len) + S_BAR),
 		lines
 			.map(
 				(line) =>
 					line +
 					' '.repeat(Math.max(len + (unicode ? 2 : 1) - strLength(line), 0)) +
-					color.gray(S.BAR)
+					color.gray(S_BAR)
 			)
 			.join('\n'),
-		color.gray(S.BAR + ' '.repeat(len) + S.BAR),
-		color.gray(S.CONNECT_LEFT + S.BAR_H.repeat(len) + S.CORNER_BOTTOM_RIGHT),
+		color.gray(S_BAR + ' '.repeat(len) + S_BAR),
+		color.gray(S_CONNECT_LEFT + S_BAR_H.repeat(len) + S_CORNER_BOTTOM_RIGHT),
 		'',
 	].join('\n');
 	process.stdout.write(noteBox);
@@ -575,11 +710,11 @@ export const cancel = (message = '') => {
 	process.stdout.write(
 		format(message, {
 			default: {
-				start: color.gray(S.BAR),
+				start: color.gray(S_BAR),
 				style: color.red,
 			},
 			lastLine: {
-				start: color.gray(S.BAR_END),
+				start: color.gray(S_BAR_END),
 			},
 		}) + '\n\n'
 	);
@@ -589,10 +724,10 @@ export const intro = (title = '') => {
 	process.stdout.write(
 		format(title, {
 			firstLine: {
-				start: color.gray(S.BAR_START),
+				start: color.gray(S_BAR_START),
 			},
 			default: {
-				start: color.gray(S.BAR),
+				start: color.gray(S_BAR),
 			},
 		}) + '\n'
 	);
@@ -601,13 +736,13 @@ export const intro = (title = '') => {
 export const outro = (message = '') => {
 	process.stdout.write(
 		[
-			color.gray(S.BAR),
+			color.gray(S_BAR),
 			format(message, {
 				default: {
-					start: color.gray(S.BAR),
+					start: color.gray(S_BAR),
 				},
 				lastLine: {
-					start: color.gray(S.BAR_END),
+					start: color.gray(S_BAR_END),
 				},
 			}),
 			'',
@@ -620,36 +755,36 @@ export type LogMessageOptions = {
 	symbol?: string;
 };
 export const log = {
-	message: (message = '', { symbol = color.gray(S.BAR) }: LogMessageOptions = {}) => {
+	message: (message = '', { symbol = color.gray(S_BAR) }: LogMessageOptions = {}) => {
 		process.stdout.write(
 			format(message, {
 				firstLine: {
 					start: symbol,
 				},
 				default: {
-					start: color.gray(S.BAR),
+					start: color.gray(S_BAR),
 				},
 			}) + '\n'
 		);
 	},
 	info: (message: string) => {
 		log.message(message, {
-			symbol: color.blue(S.INFO),
+			symbol: color.blue(S_INFO),
 		});
 	},
 	success: (message: string) => {
 		log.message(message, {
-			symbol: color.green(S.SUCCESS),
+			symbol: color.green(S_SUCCESS),
 		});
 	},
 	step: (message: string) => {
 		log.message(message, {
-			symbol: color.green(S.STEP_SUBMIT),
+			symbol: color.green(S_STEP_SUBMIT),
 		});
 	},
 	warn: (message: string) => {
 		log.message(message, {
-			symbol: color.yellow(S.WARN),
+			symbol: color.yellow(S_WARN),
 		});
 	},
 	/** alias for `log.warn()`. */
@@ -658,7 +793,7 @@ export const log = {
 	},
 	error: (message: string) => {
 		log.message(message, {
-			symbol: color.red(S.ERROR),
+			symbol: color.red(S_ERROR),
 		});
 	},
 };
@@ -679,7 +814,7 @@ export const spinner = () => {
 				start: symbol,
 			},
 			default: {
-				start: color.gray(S.BAR),
+				start: color.gray(S_BAR),
 			},
 		});
 	};
@@ -694,7 +829,7 @@ export const spinner = () => {
 		isSpinnerActive = true;
 		unblock = block();
 		_message = msg.replace(/\.+$/, '');
-		process.stdout.write(`${color.gray(S.BAR)}\n`);
+		process.stdout.write(`${color.gray(S_BAR)}\n`);
 		let frameIndex = 0;
 		let dotsTimer = 0;
 		loop = setInterval(() => {
@@ -715,10 +850,10 @@ export const spinner = () => {
 		clearPrevMessage();
 		const step =
 			code === 0
-				? color.green(S.STEP_SUBMIT)
+				? color.green(S_STEP_SUBMIT)
 				: code === 1
-				? color.red(S.STEP_CANCEL)
-				: color.red(S.STEP_ERROR);
+				? color.red(S_STEP_CANCEL)
+				: color.red(S_STEP_ERROR);
 		_message = formatMessage(step, msg || _message);
 		process.stdout.write(_message + '\n');
 		unblock();
