@@ -1,0 +1,11 @@
+{
+  "name": "clack.cc",
+  "type": "module",
+  "dependencies": {
+    "@clack/prompts": "latest",
+    "picocolors": "latest"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}

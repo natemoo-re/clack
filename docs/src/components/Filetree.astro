@@ -1,0 +1,38 @@
+---
+import { readFileSync } from "node:fs";
+import glob from "fast-glob";
+
+const files = await glob(["demo/**/*"], {
+  followSymbolicLinks: true,
+  dot: true,
+  onlyFiles: true,
+});
+
+const filetree = {};
+for (const file of files) {
+  const contents = readFileSync(file, "utf8");
+  const paths = file.replace("demo/", "").split("/").filter(Boolean);
+  let i = 0;
+  let obj: any = filetree;
+
+  for (const part of paths) {
+    if (part.endsWith(".md")) continue;
+    const last = i === paths.length - 1;
+    if (!obj["directory"]) obj["directory"] = {};
+
+    if (last) {
+      obj["directory"][part] = { file: { contents } };
+    } else {
+      obj["directory"][part] = obj["directory"][part] ?? {};
+      obj = obj["directory"][part];
+    }
+    i++;
+  }
+}
+---
+
+<script
+  type="application/json"
+  id="filetree"
+  set:html={JSON.stringify(filetree.directory, null, 2)}
+></script>

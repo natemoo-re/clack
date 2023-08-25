@@ -1,0 +1,37 @@
+---
+import SEO from "simple-astro-seo";
+
+export interface Props {
+  title?: string;
+  description?: string;
+  canonicalURL?: URL | null;
+  pageType?: "website" | "article";
+}
+
+const {
+  title = "Clack",
+  description = "Build effortlessly beautiful CLIs",
+  canonicalURL = new URL(Astro.request.url, Astro.site),
+  pageType = "website",
+} = Astro.props as Props;
+
+const ensureTrailingSlash = (url: string) => url.replace(/\/$/, "") + "/";
+---
+
+<!-- Global Metadata -->
+<meta charset="utf-8" />
+<meta name="generator" content={Astro.generator} />
+<meta name="viewport" content="width=device-width" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+<title>{title}</title>
+
+<SEO
+  siteName="Clack"
+  title={title}
+  description={description}
+  image={new URL("/social.jpg", Astro.url).toString()}
+  twitterHandle="@n_moore"
+  pageType={pageType}
+  url={canonicalURL && ensureTrailingSlash(canonicalURL.toString())}
+/>

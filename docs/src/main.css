@@ -1,0 +1,113 @@
+/* @link https://utopia.fyi/space/calculator?c=320,12,1.2,1280,16,1.25,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,&g=s,l,xl,12 */
+:root {
+  --step--2: clamp(0.69rem, calc(0.66rem + 0.18vw), 0.8rem);
+  --step--1: clamp(0.83rem, calc(0.78rem + 0.28vw), 1rem);
+  --step-0: clamp(1rem, calc(0.92rem + 0.42vw), 1.25rem);
+  --step-1: clamp(1.2rem, calc(1.08rem + 0.6vw), 1.56rem);
+  --step-2: clamp(1.44rem, calc(1.27rem + 0.86vw), 1.95rem);
+  --step-3: clamp(1.73rem, calc(1.49rem + 1.19vw), 2.44rem);
+  --step-4: clamp(2.07rem, calc(1.75rem + 1.63vw), 3.05rem);
+  --step-5: clamp(2.49rem, calc(2.05rem + 2.21vw), 3.82rem);
+
+  --space-3xs: clamp(0.19rem, calc(0.17rem + 0.1vw), 0.25rem);
+  --space-2xs: clamp(0.38rem, calc(0.33rem + 0.21vw), 0.5rem);
+  --space-xs: clamp(0.56rem, calc(0.5rem + 0.31vw), 0.75rem);
+  --space-s: clamp(0.75rem, calc(0.67rem + 0.42vw), 1rem);
+  --space-m: clamp(1.13rem, calc(1rem + 0.63vw), 1.5rem);
+  --space-l: clamp(1.5rem, calc(1.33rem + 0.83vw), 2rem);
+  --space-xl: clamp(2.25rem, calc(2rem + 1.25vw), 3rem);
+  --space-2xl: clamp(3rem, calc(2.67rem + 1.67vw), 4rem);
+  --space-3xl: clamp(4.5rem, calc(4rem + 2.5vw), 6rem);
+
+  /* One-up pairs */
+  --space-3xs-2xs: clamp(0.19rem, calc(0.08rem + 0.52vw), 0.5rem);
+  --space-2xs-xs: clamp(0.38rem, calc(0.25rem + 0.63vw), 0.75rem);
+  --space-xs-s: clamp(0.56rem, calc(0.42rem + 0.73vw), 1rem);
+  --space-s-m: clamp(0.75rem, calc(0.5rem + 1.25vw), 1.5rem);
+  --space-m-l: clamp(1.13rem, calc(0.83rem + 1.46vw), 2rem);
+  --space-l-xl: clamp(1.5rem, calc(1rem + 2.5vw), 3rem);
+  --space-xl-2xl: clamp(2.25rem, calc(1.67rem + 2.92vw), 4rem);
+  --space-2xl-3xl: clamp(3rem, calc(2rem + 5vw), 6rem);
+
+  /* Custom pairs */
+  --space-l-2xl: clamp(1.5rem, calc(0.67rem + 4.17vw), 4rem);
+}
+:where(*) {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:where(.container) {
+  padding: 0 var(--space-xs-s);
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+:where(p) {
+  max-width: 68ch;
+}
+a > svg {
+  width: 1.125em;
+}
+a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  color: inherit;
+  text-decoration: none;
+}
+a::after {
+  content: "";
+  border-bottom: 1px solid currentColor;
+}
+
+a:is(:hover, :focus) {
+  color: #e569d9;
+}
+
+body {
+  padding: var(--space-l-2xl) 0;
+}
+
+:root {
+  background: #f9fafc;
+  color: #25252d;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  font-family: "IBM Plex Mono", "Operator Mono", Menlo, Monaco, "Courier New",
+    monospace;
+  line-height: 1.5;
+
+  --color-background-muted: #eaeaec;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    background: #25252d;
+    color: #f7f7f9;
+    --color-background-muted: #16181d;
+  }
+}
+
+code {
+  font: inherit;
+  background: var(--color-background-muted);
+  padding: 2px 4px;
+  margin-left: -4px;
+  margin-right: -4px;
+  border-radius: 4px;
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.xterm {
+  padding: 1.5rem 1rem;
+}
