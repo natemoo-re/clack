@@ -9,25 +9,24 @@
     "build:prompts": "pnpm --filter @clack/prompts run build",
     "start": "pnpm --filter @example/basic run start",
     "dev": "pnpm --filter @example/changesets run start",
-    "format": "pnpm run format:code",
+    "format": "pnpm run /^format:.*/",
     "format:code": "prettier -w . --cache",
     "format:imports": "organize-imports-cli ./packages/*/tsconfig.json",
     "type-check": "tsc",
     "ci:version": "changeset version && pnpm install --no-frozen-lockfile",
     "ci:publish": "changeset publish",
-    "ci:format": "pnpm run format:imports && pnpm run format:code"
+    "ci:format": "pnpm run format"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.26.0",
-    "@types/node": "18",
-    "merge2": "^1.4.1",
+    "@changesets/cli": "^2.26.2",
+    "@types/node": "^18.16.0",
     "organize-imports-cli": "^0.10.0",
-    "prettier": "^2.8.4",
-    "typescript": "^4.9.5",
-    "unbuild": "1.1.2"
+    "prettier": "^3.0.2",
+    "typescript": "^5.2.2",
+    "unbuild": "^2.0.0"
   },
-  "packageManager": "pnpm@7.6.0",
+  "packageManager": "pnpm@8.6.12",
   "volta": {
-    "node": "16.19.0"
+    "node": "18.16.0"
   }
 }

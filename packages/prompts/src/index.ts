@@ -760,7 +760,7 @@ export const spinner = () => {
 	const delay = unicode ? 80 : 120;
 
 	let unblock: () => void;
-	let loop: NodeJS.Timer;
+	let loop: NodeJS.Timeout;
 	let isSpinnerActive: boolean = false;
 	let _message: string = '';
 	let _prevMessage: string = '';
