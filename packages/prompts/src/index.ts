@@ -9,6 +9,7 @@ import {
 	SelectKeyPrompt,
 	SelectPrompt,
 	State,
+	strLength,
 	TextPrompt
 } from '@clack/core';
 import isUnicodeSupported from 'is-unicode-supported';
@@ -192,7 +193,7 @@ export const password = (opts: PasswordOptions) => {
 			return applyTheme({
 				ctx: this,
 				message: opts.message,
-				value: this.value,
+				value: this.valueWithCursor,
 				valueWithCursor: this.valueWithCursor,
 			});
 		},
@@ -632,19 +633,6 @@ export const groupMultiselect = <Value>(opts: GroupMultiSelectOptions<Value>) =>
 	}).prompt() as Promise<Value[] | symbol>;
 };
 
-const strip = (str: string) => str.replace(ansiRegex(), '');
-const strLength = (str: string) => {
-	if (!str) return 0;
-
-	const colorCodeRegex = /\x1B\[[0-9;]*[mG]/g;
-	const arr = [...strip(str.replace(colorCodeRegex, ''))];
-	let len = 0;
-
-	for (const char of arr) {
-		len += char.charCodeAt(0) > 127 || char.charCodeAt(0) === 94 ? 2 : 1;
-	}
-	return len;
-};
 export const note = (message = '', title = '') => {
 	const maxWidth = Math.floor((process.stdout.columns ?? 80) * 0.8);
 	const lines = format(message, {
@@ -666,12 +654,7 @@ export const note = (message = '', title = '') => {
 		)}`,
 		color.gray(S_BAR + ' '.repeat(len) + S_BAR),
 		lines
-			.map(
-				(line) =>
-					line +
-					' '.repeat(Math.max(len + (unicode ? 2 : 1) - strLength(line), 0)) +
-					color.gray(S_BAR)
-			)
+			.map((line) => line + ' '.repeat(Math.max(len + 1 - strLength(line), 0)) + color.gray(S_BAR))
 			.join('\n'),
 		color.gray(S_BAR + ' '.repeat(len) + S_BAR),
 		color.gray(S_CONNECT_LEFT + S_BAR_H.repeat(len) + S_CORNER_BOTTOM_RIGHT),
@@ -872,17 +855,6 @@ export const spinner = () => {
 		message,
 	};
 };
-
-// Adapted from https://github.com/chalk/ansi-regex
-// @see LICENSE
-function ansiRegex() {
-	const pattern = [
-		'[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
-		'(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))',
-	].join('|');
-
-	return new RegExp(pattern, 'g');
-}
 
 export type PromptGroupAwaitedReturn<T> = {
 	[P in keyof T]: Exclude<Awaited<T[P]>, symbol>;

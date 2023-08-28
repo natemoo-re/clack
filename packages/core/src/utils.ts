@@ -48,22 +48,32 @@ export function block({
 	};
 }
 
-export function strLength(str: string) {
-	if (!str) return 0;
+export function strLength(input: string) {
+	let length = 0;
+	let i = 0;
 
-	const colorCodeRegex = /\x1B\[[0-9;]*[mG]/g;
-	const ansiRegex = new RegExp(
-		[
-			'[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
-			'(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))',
-		].join('|'),
-		'g'
-	);
-	const arr = [...str.replace(colorCodeRegex, '').replace(ansiRegex, '')];
-	let len = 0;
+	while (i < input.length) {
+		if (input[i] === '\u001b') {
+			// Check for escape character (ANSI escape code)
+			const endIndex = input.indexOf('m', i + 1); // Find the end of ANSI code
+			if (endIndex === -1) {
+				i++; // Skip the escape character and continue
+				continue;
+			} else {
+				i = endIndex + 1;
+				continue;
+			}
+		}
+		// Handle other control codes or regular characters
+		const code = input.charCodeAt(i);
 
-	for (const char of arr) {
-		len += char.charCodeAt(0) > 127 || char.charCodeAt(0) === 94 ? 2 : 1;
+		if (code >= 0xd800 && code <= 0xdbff) {
+			i += 2;
+		} else {
+			length++;
+			i++;
+		}
 	}
-	return len;
+
+	return length;
 }
