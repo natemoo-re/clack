@@ -9,7 +9,7 @@ import {
 	SelectKeyPrompt,
 	SelectPrompt,
 	State,
-	TextPrompt,
+	TextPrompt
 } from '@clack/core';
 import isUnicodeSupported from 'is-unicode-supported';
 import color from 'picocolors';
@@ -777,7 +777,7 @@ export const spinner = () => {
 	const delay = unicode ? 80 : 120;
 
 	let unblock: () => void;
-	let loop: NodeJS.Timer;
+	let loop: NodeJS.Timeout;
 	let isSpinnerActive: boolean = false;
 	let _message: string = '';
 	let _prevMessage: string = '';
@@ -799,6 +799,33 @@ export const spinner = () => {
 		process.stdout.write(erase.down(linesCounter));
 	};
 
+	const handleExit = (code: number) => {
+		const msg = code > 1 ? 'Something went wrong' : 'Canceled';
+		if (isSpinnerActive) stop(msg, code);
+	};
+
+	const errorEventHandler = () => handleExit(2);
+	const signalEventHandler = () => handleExit(1);
+
+	const registerHooks = () => {
+		// Reference: https://nodejs.org/api/process.html#event-uncaughtexception
+		process.on('uncaughtExceptionMonitor', errorEventHandler);
+		// Reference: https://nodejs.org/api/process.html#event-unhandledrejection
+		process.on('unhandledRejection', errorEventHandler);
+		// Reference Signal Events: https://nodejs.org/api/process.html#signal-events
+		process.on('SIGINT', signalEventHandler);
+		process.on('SIGTERM', signalEventHandler);
+		process.on('exit', handleExit);
+	};
+
+	const clearHooks = () => {
+		process.removeListener('uncaughtExceptionMonitor', errorEventHandler);
+		process.removeListener('unhandledRejection', errorEventHandler);
+		process.removeListener('SIGINT', signalEventHandler);
+		process.removeListener('SIGTERM', signalEventHandler);
+		process.removeListener('exit', handleExit);
+	};
+
 	const start = (msg: string = ''): void => {
 		isSpinnerActive = true;
 		unblock = block();
@@ -806,6 +833,7 @@ export const spinner = () => {
 		process.stdout.write(`${color.gray(S_BAR)}\n`);
 		let frameIndex = 0;
 		let dotsTimer = 0;
+		registerHooks();
 		loop = setInterval(() => {
 			clearPrevMessage();
 			const frame = color.magenta(frames[frameIndex]);
@@ -830,26 +858,13 @@ export const spinner = () => {
 				: color.red(S_STEP_ERROR);
 		_message = formatMessage(step, msg || _message);
 		process.stdout.write(_message + '\n');
+		clearHooks();
 		unblock();
 	};
 
 	const message = (msg: string = ''): void => {
 		_message = msg || _message;
 	};
-
-	const handleExit = (code: number) => {
-		const msg = code > 1 ? 'Something went wrong' : 'Canceled';
-		if (isSpinnerActive) stop(msg, code);
-	};
-
-	// Reference: https://nodejs.org/api/process.html#event-uncaughtexception
-	process.on('uncaughtExceptionMonitor', () => handleExit(2));
-	// Reference: https://nodejs.org/api/process.html#event-unhandledrejection
-	process.on('unhandledRejection', () => handleExit(2));
-	// Reference Signal Events: https://nodejs.org/api/process.html#signal-events
-	process.on('SIGINT', () => handleExit(1));
-	process.on('SIGTERM', () => handleExit(1));
-	process.on('exit', handleExit);
 
 	return {
 		start,

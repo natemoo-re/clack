@@ -47,13 +47,13 @@
     "stdin",
     "ui"
   ],
-  "packageManager": "pnpm@7.6.0",
+  "packageManager": "pnpm@8.6.12",
   "scripts": {
     "build": "unbuild",
     "prepack": "pnpm build"
   },
   "dependencies": {
-    "@clack/core": "^0.3.3",
+    "@clack/core": "workspace:*",
     "picocolors": "^1.0.0",
     "sisteransi": "^1.0.5"
   },

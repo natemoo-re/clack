@@ -47,7 +47,7 @@
     "url": "https://twitter.com/n_moore"
   },
   "license": "MIT",
-  "packageManager": "pnpm@7.6.0",
+  "packageManager": "pnpm@8.6.12",
   "scripts": {
     "build": "unbuild",
     "prepack": "pnpm build"
