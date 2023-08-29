@@ -1,8 +1,24 @@
-import type { Key } from 'node:readline';
-
 import { stdin, stdout } from 'node:process';
+import type { Key } from 'node:readline';
 import * as readline from 'node:readline';
+import { Readable } from 'node:stream';
 import { cursor } from 'sisteransi';
+import { hasAliasKey } from './aliases';
+
+export * from './aliases';
+export * from './string';
+
+export const CANCEL_SYMBOL = Symbol('clack:cancel');
+
+export function isCancel(value: unknown): value is symbol {
+	return value === CANCEL_SYMBOL;
+}
+
+export function setRawMode(input: Readable, value: boolean) {
+	const i = input as typeof stdin;
+
+	if (i.isTTY) i.setRawMode(value);
+}
 
 export function block({
 	input = stdin,
@@ -19,9 +35,9 @@ export function block({
 	readline.emitKeypressEvents(input, rl);
 	if (input.isTTY) input.setRawMode(true);
 
-	const clear = (data: Buffer, { name }: Key) => {
+	const clear = (data: Buffer, { name, sequence }: Key) => {
 		const str = String(data);
-		if (str === '\x03') {
+		if (hasAliasKey([str, name, sequence], 'cancel')) {
 			process.exit(0);
 		}
 		if (!overwrite) return;

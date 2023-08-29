@@ -1,42 +1,13 @@
-import type { Key, ReadLine } from 'node:readline';
-
 import { stdin, stdout } from 'node:process';
-import readline from 'node:readline';
+import readline, { type Key, type ReadLine } from 'node:readline';
 import { Readable, Writable } from 'node:stream';
 import { WriteStream } from 'node:tty';
 import { cursor, erase } from 'sisteransi';
 import wrap from 'wrap-ansi';
 
-function diffLines(a: string, b: string) {
-	if (a === b) return;
+import { ALIASES, CANCEL_SYMBOL, diffLines, hasAliasKey, KEYS, setRawMode } from '../utils';
 
-	const aLines = a.split('\n');
-	const bLines = b.split('\n');
-	const diff: number[] = [];
-
-	for (let i = 0; i < Math.max(aLines.length, bLines.length); i++) {
-		if (aLines[i] !== bLines[i]) diff.push(i);
-	}
-
-	return diff;
-}
-
-const cancel = Symbol('clack:cancel');
-export function isCancel(value: unknown): value is symbol {
-	return value === cancel;
-}
-
-function setRawMode(input: Readable, value: boolean) {
-	if ((input as typeof stdin).isTTY) (input as typeof stdin).setRawMode(value);
-}
-
-const aliases = new Map([
-	['k', 'up'],
-	['j', 'down'],
-	['h', 'left'],
-	['l', 'right'],
-]);
-const keys = new Set(['up', 'down', 'left', 'right', 'space', 'enter']);
+import type { ClackEvents, ClackState, InferSetType } from '../types';
 
 export interface PromptOptions<Self extends Prompt> {
 	render(this: Omit<Self, 'prompt'>): string | void;
@@ -48,25 +19,25 @@ export interface PromptOptions<Self extends Prompt> {
 	debug?: boolean;
 }
 
-export type State = 'initial' | 'active' | 'cancel' | 'submit' | 'error';
-
 export default class Prompt {
 	protected input: Readable;
 	protected output: Writable;
+
 	private rl!: ReadLine;
 	private opts: Omit<PromptOptions<Prompt>, 'render' | 'input' | 'output'>;
-	private _track: boolean = false;
 	private _render: (context: Omit<Prompt, 'prompt'>) => string | void;
-	protected _cursor: number = 0;
+	private _track = false;
+	private _prevFrame = '';
+	private _subscribers = new Map<string, { cb: (...args: any) => any; once?: boolean }[]>();
+	protected _cursor = 0;
 
-	public state: State = 'initial';
+	public state: ClackState = 'initial';
+	public error = '';
 	public value: any;
-	public error: string = '';
 
-	constructor(
-		{ render, input = stdin, output = stdout, ...opts }: PromptOptions<Prompt>,
-		trackValue: boolean = true
-	) {
+	constructor(options: PromptOptions<Prompt>, trackValue: boolean = true) {
+		const { input = stdin, output = stdout, render, ...opts } = options;
+
 		this.opts = opts;
 		this.onKeypress = this.onKeypress.bind(this);
 		this.close = this.close.bind(this);
@@ -76,6 +47,66 @@ export default class Prompt {
 
 		this.input = input;
 		this.output = output;
+	}
+
+	/**
+	 * Unsubscribe all listeners
+	 */
+	protected unsubscribe() {
+		this._subscribers.clear();
+	}
+
+	/**
+	 * Set a subscriber with opts
+	 * @param event - The event name
+	 */
+	private setSubscriber<T extends keyof ClackEvents>(
+		event: T,
+		opts: { cb: ClackEvents[T]; once?: boolean }
+	) {
+		const params = this._subscribers.get(event) ?? [];
+		params.push(opts);
+		this._subscribers.set(event, params);
+	}
+
+	/**
+	 * Subscribe to an event
+	 * @param event - The event name
+	 * @param cb - The callback
+	 */
+	public on<T extends keyof ClackEvents>(event: T, cb: ClackEvents[T]) {
+		this.setSubscriber(event, { cb });
+	}
+
+	/**
+	 * Subscribe to an event once
+	 * @param event - The event name
+	 * @param cb - The callback
+	 */
+	public once<T extends keyof ClackEvents>(event: T, cb: ClackEvents[T]) {
+		this.setSubscriber(event, { cb, once: true });
+	}
+
+	/**
+	 * Emit an event with data
+	 * @param event - The event name
+	 * @param data - The data to pass to the callback
+	 */
+	public emit<T extends keyof ClackEvents>(event: T, ...data: Parameters<ClackEvents[T]>) {
+		const cbs = this._subscribers.get(event) ?? [];
+		const cleanup: (() => void)[] = [];
+
+		for (const subscriber of cbs) {
+			subscriber.cb(...data);
+
+			if (subscriber.once) {
+				cleanup.push(() => cbs.splice(cbs.indexOf(subscriber), 1));
+			}
+		}
+
+		for (const cb of cleanup) {
+			cb();
+		}
 	}
 
 	public prompt() {
@@ -120,48 +151,20 @@ export default class Prompt {
 				this.output.write(cursor.show);
 				this.output.off('resize', this.render);
 				setRawMode(this.input, false);
-				resolve(cancel);
+				resolve(CANCEL_SYMBOL);
 			});
 		});
-	}
-
-	private subscribers = new Map<string, { cb: (...args: any) => any; once?: boolean }[]>();
-	public on(event: string, cb: (...args: any) => any) {
-		const arr = this.subscribers.get(event) ?? [];
-		arr.push({ cb });
-		this.subscribers.set(event, arr);
-	}
-	public once(event: string, cb: (...args: any) => any) {
-		const arr = this.subscribers.get(event) ?? [];
-		arr.push({ cb, once: true });
-		this.subscribers.set(event, arr);
-	}
-	public emit(event: string, ...data: any[]) {
-		const cbs = this.subscribers.get(event) ?? [];
-		const cleanup: (() => void)[] = [];
-		for (const subscriber of cbs) {
-			subscriber.cb(...data);
-			if (subscriber.once) {
-				cleanup.push(() => cbs.splice(cbs.indexOf(subscriber), 1));
-			}
-		}
-		for (const cb of cleanup) {
-			cb();
-		}
-	}
-	private unsubscribe() {
-		this.subscribers.clear();
 	}
 
 	private onKeypress(char: string, key?: Key) {
 		if (this.state === 'error') {
 			this.state = 'active';
 		}
-		if (key?.name && !this._track && aliases.has(key.name)) {
-			this.emit('cursor', aliases.get(key.name));
+		if (key?.name && !this._track && ALIASES.has(key.name)) {
+			this.emit('cursor', ALIASES.get(key.name));
 		}
-		if (key?.name && keys.has(key.name)) {
-			this.emit('cursor', key.name);
+		if (key?.name && KEYS.has(key.name as InferSetType<typeof KEYS>)) {
+			this.emit('cursor', key.name as InferSetType<typeof KEYS>);
 		}
 		if (char && (char.toLowerCase() === 'y' || char.toLowerCase() === 'n')) {
 			this.emit('confirm', char.toLowerCase() === 'y');
@@ -189,7 +192,8 @@ export default class Prompt {
 				this.state = 'submit';
 			}
 		}
-		if (char === '\x03') {
+
+		if (hasAliasKey([key?.name, key?.sequence], 'cancel')) {
 			this.state = 'cancel';
 		}
 		if (this.state === 'submit' || this.state === 'cancel') {
@@ -217,7 +221,6 @@ export default class Prompt {
 		this.output.write(cursor.move(-999, lines * -1));
 	}
 
-	private _prevFrame = '';
 	private render() {
 		const frame = wrap(this._render(this) ?? '', process.stdout.columns, { hard: true });
 		if (frame === this._prevFrame) return;
