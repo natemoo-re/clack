@@ -46,11 +46,15 @@ async function main() {
 				p.multiselect({
 					message: 'Select additional tools.',
 					initialValues: ['prettier', 'eslint'],
+					maxItems: 5,
 					options: [
 						{ value: 'prettier', label: 'Prettier', hint: 'recommended' },
 						{ value: 'eslint', label: 'ESLint', hint: 'recommended' },
 						{ value: 'stylelint', label: 'Stylelint' },
 						{ value: 'gh-action', label: 'GitHub Action' },
+						{ value: 'gh-action1', label: 'GitHub Action1' },
+						{ value: 'gh-action2', label: 'GitHub Action2' },
+						{ value: 'gh-action3', label: 'GitHub Action3' },
 					],
 				}),
 			install: () =>

@@ -156,3 +156,19 @@ const group = await p.group(
 
 console.log(group.name, group.age, group.color);
 ```
+
+### Tasks
+
+Execute multiple tasks in spinners.
+
+```js
+await p.tasks([
+  {
+    title: 'Installing via npm',
+    task: async (message) => {
+      // Do installation here
+      return 'Installed via npm';
+    },
+  },
+]);
+```

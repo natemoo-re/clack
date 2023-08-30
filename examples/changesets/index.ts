@@ -59,7 +59,7 @@ async function main() {
 					(pkg) => !major.includes(pkg) && !minor.includes(pkg)
 				);
 				if (possiblePackages.length === 0) return;
-				let note = possiblePackages.join('\n');
+				let note = possiblePackages.join(color.dim(', '));
 
 				p.log.step(`These packages will have a ${color.green('patch')} bump.\n${color.dim(note)}`);
 				return possiblePackages;
