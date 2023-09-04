@@ -98,7 +98,7 @@ export interface TextOptions {
 	placeholder?: string;
 	defaultValue?: string;
 	initialValue?: string;
-	validate?: (value: string) => string | void;
+	validate?: (value: string) => string | Error | void;
 }
 export const text = (opts: TextOptions) => {
 	return new TextPrompt({
@@ -134,7 +134,7 @@ export const text = (opts: TextOptions) => {
 export interface PasswordOptions {
 	message: string;
 	mask?: string;
-	validate?: (value: string) => string | void;
+	validate?: (value: string) => string | Error | void;
 }
 export const password = (opts: PasswordOptions) => {
 	return new PasswordPrompt({
