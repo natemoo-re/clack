@@ -16,11 +16,6 @@ import { cursor, erase } from 'sisteransi';
 
 export { isCancel } from '@clack/core';
 
-/**
- * Control variable used to prevent excessive rewrites in the CI environment
- * Issue: https://github.com/natemoo-re/clack/issues/168
- */
-const isCI = process.env.GITHUB_ACTIONS === 'true';
 
 const unicode = isUnicodeSupported();
 const s = (c: string, fallback: string) => (unicode ? c : fallback);
@@ -643,6 +638,7 @@ export const log = {
 export const spinner = () => {
 	const frames = unicode ? ['◒', '◐', '◓', '◑'] : ['•', 'o', 'O', '0'];
 	const delay = unicode ? 80 : 120;
+	const isCI = process.env.GITHUB_ACTIONS === 'true';
 
 	let unblock: () => void;
 	let loop: NodeJS.Timeout;

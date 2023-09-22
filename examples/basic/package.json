@@ -10,7 +10,8 @@
   },
   "scripts": {
     "start": "jiti ./index.ts",
-    "spinner": "jiti ./spinner.ts"
+    "spinner": "jiti ./spinner.ts",
+    "spinner-ci": "npx cross-env GITHUB_ACTIONS=\"true\" jiti ./spinner-ci.ts"
   },
   "devDependencies": {
     "jiti": "^1.17.0"

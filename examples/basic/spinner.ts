@@ -3,7 +3,7 @@ import * as p from '@clack/prompts';
 p.intro('spinner start...');
 
 const spin = p.spinner();
-const total = 10000;
+const total = 6000;
 let progress = 0;
 spin.start();
 
