@@ -16,7 +16,6 @@ import { cursor, erase } from 'sisteransi';
 
 export { isCancel } from '@clack/core';
 
-
 const unicode = isUnicodeSupported();
 const s = (c: string, fallback: string) => (unicode ? c : fallback);
 const S_STEP_ACTIVE = s('◆', '*');
