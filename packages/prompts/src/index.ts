@@ -8,7 +8,7 @@ import {
 	SelectKeyPrompt,
 	SelectPrompt,
 	State,
-	TextPrompt
+	TextPrompt,
 } from '@clack/core';
 import { isCI } from 'ci-info';
 import isUnicodeSupported from 'is-unicode-supported';
@@ -673,7 +673,7 @@ export const spinner = () => {
 	};
 
 	const clearPrevMessage = () => {
-		if (!_prevMessage) return;
+		if (_prevMessage === undefined) return;
 		if (isCI) process.stdout.write('\n');
 		const prevLines = _prevMessage.split('\n');
 		process.stdout.write(cursor.move(-999, prevLines.length - 1));
