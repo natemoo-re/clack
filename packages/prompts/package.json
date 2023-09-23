@@ -54,6 +54,7 @@
   },
   "dependencies": {
     "@clack/core": "workspace:*",
+    "ci-info": "^3.8.0",
     "picocolors": "^1.0.0",
     "sisteransi": "^1.0.5"
   },

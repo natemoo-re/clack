@@ -10,6 +10,7 @@ import {
 	State,
 	TextPrompt
 } from '@clack/core';
+import { isCI } from 'ci-info';
 import isUnicodeSupported from 'is-unicode-supported';
 import color from 'picocolors';
 import { cursor, erase } from 'sisteransi';
@@ -637,7 +638,6 @@ export const log = {
 export const spinner = () => {
 	const frames = unicode ? ['◒', '◐', '◓', '◑'] : ['•', 'o', 'O', '0'];
 	const delay = unicode ? 80 : 120;
-	const isCI = process.env.GITHUB_ACTIONS === 'true';
 
 	let unblock: () => void;
 	let loop: NodeJS.Timeout;
