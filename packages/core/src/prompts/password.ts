@@ -15,7 +15,7 @@ export default class PasswordPrompt extends Prompt {
 		return this._cursor;
 	}
 
-	get maskedValue(): string {
+	get masked(): string {
 		return this.value.replaceAll(/./g, this._mask);
 	}
 
@@ -24,22 +24,22 @@ export default class PasswordPrompt extends Prompt {
 
 		this.value = '';
 		this._mask = mask ?? '•';
-		this.valueWithCursor = this.maskedValue + color.inverse(color.hidden('_'));
+		this.valueWithCursor = this.masked + color.inverse(color.hidden('_'));
 
 		this.exposeTestUtils();
 
 		this.on('finalize', () => {
-			this.valueWithCursor = this.maskedValue;
+			this.valueWithCursor = this.masked;
 			this.exposeTestUtils();
 		});
 
 		this.on('value', (value) => {
 			this.value = value;
 			if (this.cursor >= this.value.length) {
-				this.valueWithCursor = `${this.maskedValue}${color.inverse(color.hidden('_'))}`;
+				this.valueWithCursor = `${this.masked}${color.inverse(color.hidden('_'))}`;
 			} else {
-				const s1 = this.maskedValue.slice(0, this.cursor);
-				const s2 = this.maskedValue.slice(this.cursor);
+				const s1 = this.masked.slice(0, this.cursor);
+				const s2 = this.masked.slice(this.cursor);
 				this.valueWithCursor = `${s1}${color.inverse(s2[0])}${s2.slice(1)}`;
 			}
 			this.exposeTestUtils();
@@ -49,7 +49,7 @@ export default class PasswordPrompt extends Prompt {
 	private exposeTestUtils() {
 		exposeTestUtils<PasswordPrompt>({
 			cursor: this.cursor,
-			maskedValue: this.maskedValue,
+			masked: this.masked,
 			valueWithCursor: this.valueWithCursor,
 		});
 	}

@@ -52,7 +52,7 @@ describe('password', () => {
 		mock.submit(value);
 
 		expect(mock.state).toBe('submit');
-		expect(mock.frame).toBe(`${title}${color.gray(S_BAR)}  ${color.dim(mock.maskedValue)}`);
+		expect(mock.frame).toBe(`${title}${color.gray(S_BAR)}  ${color.dim(mock.masked)}`);
 	});
 
 	it('should render cancel', () => {
@@ -64,9 +64,9 @@ describe('password', () => {
 
 		expect(mock.state).toBe('cancel');
 		expect(mock.frame).toBe(
-			`${title}${color.gray(S_BAR)}  ${color.strikethrough(
-				color.dim(mock.maskedValue)
-			)}\n${color.gray(S_BAR)}`
+			`${title}${color.gray(S_BAR)}  ${color.strikethrough(color.dim(mock.masked))}\n${color.gray(
+				S_BAR
+			)}`
 		);
 	});
 

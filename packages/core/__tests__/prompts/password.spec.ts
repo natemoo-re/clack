@@ -26,7 +26,7 @@ describe('PasswordPrompt', () => {
 		makeSut();
 		mock.emit('value', value);
 
-		expect(mock.maskedValue).toBe(value.replace(/./g, '•'));
+		expect(mock.masked).toBe(value.replace(/./g, '•'));
 	});
 
 	it('should mask value with custom mask', () => {
@@ -37,7 +37,7 @@ describe('PasswordPrompt', () => {
 		});
 		mock.emit('value', value);
 
-		expect(mock.maskedValue).toBe(value.replace(/./g, '*'));
+		expect(mock.masked).toBe(value.replace(/./g, '*'));
 	});
 
 	it('should change cursor position when cursor changes', () => {
@@ -48,30 +48,30 @@ describe('PasswordPrompt', () => {
 			initialValue: value,
 		});
 
-		expect(mock.valueWithCursor).toBe(mock.maskedValue + cursor);
+		expect(mock.valueWithCursor).toBe(mock.masked + cursor);
 
 		cursorIndex--;
 		mock.setCursor(cursorIndex);
 		mock.emit('value', value);
 		expect(mock.valueWithCursor).toBe(
-			mock.maskedValue.slice(0, cursorIndex) +
-				color.inverse(mock.maskedValue[cursorIndex]) +
-				mock.maskedValue.slice(cursorIndex + 1)
+			mock.masked.slice(0, cursorIndex) +
+				color.inverse(mock.masked[cursorIndex]) +
+				mock.masked.slice(cursorIndex + 1)
 		);
 
 		cursorIndex--;
 		mock.setCursor(cursorIndex);
 		mock.emit('value', value);
 		expect(mock.valueWithCursor).toBe(
-			mock.maskedValue.slice(0, cursorIndex) +
-				color.inverse(mock.maskedValue[cursorIndex]) +
-				mock.maskedValue.slice(cursorIndex + 1)
+			mock.masked.slice(0, cursorIndex) +
+				color.inverse(mock.masked[cursorIndex]) +
+				mock.masked.slice(cursorIndex + 1)
 		);
 
 		cursorIndex += 2;
 		mock.setCursor(cursorIndex);
 		mock.emit('value', value);
-		expect(mock.valueWithCursor).toBe(mock.maskedValue + cursor);
+		expect(mock.valueWithCursor).toBe(mock.masked + cursor);
 	});
 
 	it('should submit value', () => {
