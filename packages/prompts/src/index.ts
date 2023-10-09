@@ -8,12 +8,12 @@ import {
 	SelectKeyPrompt,
 	SelectPrompt,
 	State,
-	TextPrompt,
+	TextPrompt
 } from '@clack/core';
-import { isCI } from 'ci-info';
 import isUnicodeSupported from 'is-unicode-supported';
 import color from 'picocolors';
 import { cursor, erase } from 'sisteransi';
+import { isCI } from 'std-env';
 
 export { isCancel } from '@clack/core';
 
