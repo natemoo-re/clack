@@ -48,31 +48,53 @@ export function block({
 	};
 }
 
-export function strLength(input: string) {
+function ansiRegex(): RegExp {
+	const pattern = [
+		'[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
+		'(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))',
+	].join('|');
+
+	return new RegExp(pattern, 'g');
+}
+
+function stripAnsi(str: string): string {
+	return str.replace(ansiRegex(), '');
+}
+
+function isControlCharacter(code: number): boolean {
+	return code <= 0x1f || (code >= 0x7f && code <= 0x9f);
+}
+
+function isCombiningCharacter(code: number): boolean {
+	return code >= 0x300 && code <= 0x36f;
+}
+
+function isSurrogatePair(code: number): boolean {
+	return code >= 0xd800 && code <= 0xdbff;
+}
+
+export function strLength(str: string): number {
+	if (str === '') {
+		return 0;
+	}
+
+	// Remove ANSI escape codes from the input string.
+	str = stripAnsi(str);
+
 	let length = 0;
-	let i = 0;
 
-	while (i < input.length) {
-		if (input[i] === '\u001b') {
-			// Check for escape character (ANSI escape code)
-			const endIndex = input.indexOf('m', i + 1); // Find the end of ANSI code
-			if (endIndex === -1) {
-				i++; // Skip the escape character and continue
-				continue;
-			} else {
-				i = endIndex + 1;
-				continue;
-			}
-		}
-		// Handle other control codes or regular characters
-		const code = input.charCodeAt(i);
+	for (let i = 0; i < str.length; i++) {
+		const code = str.codePointAt(i);
 
-		if (code >= 0xd800 && code <= 0xdbff) {
-			i += 2;
-		} else {
-			length++;
-			i++;
+		if (!code || isControlCharacter(code) || isCombiningCharacter(code)) {
+			continue;
 		}
+
+		if (isSurrogatePair(code)) {
+			i++; // Skip the next code unit.
+		}
+
+		length++;
 	}
 
 	return length;
