@@ -1,9 +1,10 @@
+import type { Key } from 'node:readline';
 import Prompt from '../prompts/prompt';
 import { ClackState } from '../types';
 
 export type MockResult<TPrompt extends Prompt = Prompt> = TPrompt & {
 	frame: string;
-	pressKey: (char: string, key: { name: string }) => void;
+	pressKey: (char: string, key: Key) => void;
 	setCursor: (cursor: number) => void;
 	setState: (state: ClackState) => void;
 	setValue: (value: any) => void;
