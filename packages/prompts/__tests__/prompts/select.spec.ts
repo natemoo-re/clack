@@ -3,7 +3,6 @@ import color from 'picocolors';
 import { select } from '../../src';
 import { opt } from '../../src/prompts/select';
 import {
-	limitOptions,
 	Option,
 	symbol,
 	S_BAR,
@@ -13,19 +12,6 @@ import {
 } from '../../src/utils';
 
 const options: Option<string>[] = [{ value: 'foo' }, { value: 'bar' }, { value: 'baz' }];
-
-const formatOptions = (
-	opts: Option<string>[] = options,
-	cursor: number = 0,
-	maxItems: number = 5
-): string => {
-	return `${color.cyan(S_BAR)}  ${limitOptions({
-		cursor: cursor,
-		options: opts,
-		maxItems: maxItems,
-		style: (item, active) => opt(item, active ? 'active' : 'inactive'),
-	}).join(`\n${color.cyan(S_BAR)}  `)}`.replace(new RegExp(`(${opts[cursor].value}).+`), '$1');
-};
 
 describe('select', () => {
 	const mock = mockPrompt<SelectPrompt<{ value: string }>>();
@@ -61,21 +47,17 @@ describe('select', () => {
 	});
 
 	it('should render initial state', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}\n`;
-
 		select({ message, options });
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(`${title}${formatOptions()}\n${color.cyan(S_BAR_END)}\n`);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render initial state with initialValue', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}\n`;
-
 		select({ message, options, initialValue: options[1].value });
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(`${title}${formatOptions(options, 1)}\n${color.cyan(S_BAR_END)}\n`);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render cancel', () => {

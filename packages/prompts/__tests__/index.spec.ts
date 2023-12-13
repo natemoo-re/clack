@@ -6,12 +6,6 @@ function camelCase(input: string): string {
 	return input.replace(/[-_]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''));
 }
 
-function pascalCase(input: string): string {
-	const words = input.split('-');
-	const pascalCaseWords = words.map((word) => word.charAt(0).toUpperCase() + word.slice(1));
-	return pascalCaseWords.join('');
-}
-
 describe('Package', () => {
 	const exportedKeys = Object.keys(packageExports);
 

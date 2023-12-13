@@ -2,15 +2,9 @@ import { mockPrompt, SelectPrompt } from '@clack/core';
 import color from 'picocolors';
 import { selectKey } from '../../src';
 import { opt } from '../../src/prompts/select-key';
-import { Option, symbol, S_BAR, S_BAR_END } from '../../src/utils';
+import { Option, symbol, S_BAR } from '../../src/utils';
 
 const options: Option<string>[] = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
-
-const formatOptions = (_options: Option<string>[] = options, _cursor: number = 0): string => {
-	return `${color.cyan(S_BAR)}  ${_options
-		.map((option, i) => opt(option, i === _cursor ? 'active' : 'inactive'))
-		.join(`\n${color.cyan(S_BAR)}  `)}`;
-};
 
 describe('selectKey', () => {
 	const mock = mockPrompt<SelectPrompt<{ value: string }>>();
@@ -58,21 +52,17 @@ describe('selectKey', () => {
 	});
 
 	it('should render initial state', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}\n`;
-
 		selectKey({ message, options });
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(`${title}${formatOptions()}\n${color.cyan(S_BAR_END)}\n`);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render initial state with initialValue', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}\n`;
-
 		selectKey({ message, options, initialValue: options[1].value[0] });
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(`${title}${formatOptions(options, 1)}\n${color.cyan(S_BAR_END)}\n`);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render cancel', () => {

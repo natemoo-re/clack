@@ -1,4 +1,4 @@
-import { mockPrompt, SelectPrompt, State } from '@clack/core';
+import { mockPrompt, SelectPrompt } from '@clack/core';
 import color from 'picocolors';
 import { groupMultiselect } from '../../src';
 import { opt } from '../../src/prompts/group-multiselect';
@@ -16,51 +16,6 @@ const options = {
 	'changed packages': [{ value: '@scope/a' }, { value: '@scope/b' }, { value: '@scope/c' }],
 	'unchanged packages': [{ value: '@scope/x' }, { value: '@scope/y' }, { value: '@scope/z' }],
 } satisfies Record<string, Option<string>[]>;
-
-const formatOptions = (
-	opts: Record<string, Option<string>[]> = options,
-	value: string[] = [],
-	cursor: number = 0,
-	state: State = 'initial'
-): string => {
-	const stateColor = state === 'error' ? color.yellow : color.cyan;
-	return `${stateColor(S_BAR)}  ${Object.entries(opts)
-		.map(([group, children], i, tuples) => {
-			const skip = tuples.slice(0, i).flat(3).length;
-			const isGroupActive = i + skip === cursor;
-			const isGroupSelected = !tuples[i][1]
-				.map((option) => value.includes(option.value))
-				.includes(false);
-			const CHECKBOX = isGroupSelected
-				? color.green(S_CHECKBOX_SELECTED)
-				: isGroupActive
-				? color.cyan(S_CHECKBOX_ACTIVE)
-				: color.dim(S_CHECKBOX_INACTIVE);
-			const label = isGroupActive ? group : color.dim(group);
-			return [
-				`${color.dim('')}${CHECKBOX} ${label}`,
-				children.map((child, j, ar) => {
-					const isActive = i + j + skip + 1 === cursor;
-					const isSelected = value.includes(child.value);
-					const isLast = j === ar.length - 1;
-					const BAR = isLast ? S_BAR_END : S_BAR;
-					const CHECKBOX = isSelected
-						? color.green(S_CHECKBOX_SELECTED)
-						: isGroupActive || isActive
-						? color.cyan(S_CHECKBOX_ACTIVE)
-						: color.dim(S_CHECKBOX_INACTIVE);
-					const prefix = isGroupActive ? `${BAR} ` : color.dim(`${BAR} `);
-					const label = child.label ?? child.value;
-					return `${stateColor(S_BAR)}  ${prefix}${CHECKBOX} ${
-						isActive ? label : color.dim(label)
-					}`;
-				}),
-			]
-				.flat(2)
-				.join('\n');
-		})
-		.join(`\n${stateColor(S_BAR)}  `)}`;
-};
 
 describe('groupMultiselect', () => {
 	const mock = mockPrompt<SelectPrompt<{ value: string }>>();
@@ -178,37 +133,27 @@ describe('groupMultiselect', () => {
 	});
 
 	it('should render initial state', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}`;
-
 		groupMultiselect({ message, options });
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(`${title}\n${formatOptions()}\n${color.cyan(S_BAR_END)}\n`);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render initial with group active', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}`;
-
 		groupMultiselect({ message, options });
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(`${title}\n${formatOptions()}\n${color.cyan(S_BAR_END)}\n`);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render initial with group selected', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}`;
-
 		groupMultiselect({ message, options, initialValues: ['changed packages'] });
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(
-			`${title}\n${formatOptions(options, mock.value)}\n${color.cyan(S_BAR_END)}\n`
-		);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render initial state with option active', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}\n`;
-
 		groupMultiselect({
 			message,
 			options,
@@ -216,14 +161,10 @@ describe('groupMultiselect', () => {
 		});
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(
-			`${title}${formatOptions(options, mock.value, 1)}\n${color.cyan(S_BAR_END)}\n`
-		);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render initial state with option active and selected', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}\n`;
-
 		groupMultiselect({
 			message,
 			options,
@@ -232,14 +173,10 @@ describe('groupMultiselect', () => {
 		});
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(
-			`${title}${formatOptions(options, mock.value, 1)}\n${color.cyan(S_BAR_END)}\n`
-		);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render initial state with option not active and selected', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}\n`;
-
 		groupMultiselect({
 			message,
 			options,
@@ -248,28 +185,15 @@ describe('groupMultiselect', () => {
 		});
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(
-			`${title}${formatOptions(options, mock.value, 2)}\n${color.cyan(S_BAR_END)}\n`
-		);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render error', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('error')}  ${message}`;
-
 		groupMultiselect({ message, options });
 		mock.submit();
-		const errorLines = mock.error.split('\n');
 
 		expect(mock.state).toBe('error');
-		expect(mock.frame).toBe(
-			[
-				title,
-				formatOptions(options, mock.value, 0, 'error'),
-				`${color.yellow(S_BAR_END)}  ${color.yellow(errorLines[0])}`,
-				`${color.hidden('-')}  ${errorLines[1]}`,
-				'',
-			].join('\n')
-		);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	// Implement when `groupMultiselect.validate` be exposed

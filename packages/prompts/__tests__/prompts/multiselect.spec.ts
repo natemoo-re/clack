@@ -3,7 +3,6 @@ import color from 'picocolors';
 import { multiselect } from '../../src';
 import { opt } from '../../src/prompts/multiselect';
 import {
-	limitOptions,
 	Option,
 	symbol,
 	S_BAR,
@@ -14,32 +13,6 @@ import {
 } from '../../src/utils';
 
 const options: Option<string>[] = [{ value: 'foo' }, { value: 'bar' }, { value: 'baz' }];
-
-const formatOptions = (
-	opts: Option<string>[] = options,
-	value: string[] = [],
-	cursor: number = 0,
-	maxItems: number = 5
-): string => {
-	return `${color.cyan(S_BAR)}  ${limitOptions({
-		cursor: cursor,
-		options: opts,
-		maxItems: maxItems,
-		style: (item, active) => {
-			const selected = value.includes(item.value);
-			return opt(
-				item,
-				active && selected
-					? 'active-selected'
-					: selected
-					? 'selected'
-					: active
-					? 'active'
-					: 'inactive'
-			);
-		},
-	}).join(`\n${color.cyan(S_BAR)}  `)}`.replace(new RegExp(`(${opts[cursor].value}).+`), '$1');
-};
 
 describe('multiselect', () => {
 	const mock = mockPrompt<SelectPrompt<{ value: string }>>();
@@ -88,17 +61,13 @@ describe('multiselect', () => {
 	});
 
 	it('should render initial state', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}\n`;
-
 		multiselect({ message, options });
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(`${title}${formatOptions()}\n${color.cyan(S_BAR_END)}\n`);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render initial state with initialValue', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('initial')}  ${message}\n`;
-
 		multiselect({
 			message,
 			options,
@@ -107,48 +76,15 @@ describe('multiselect', () => {
 		});
 
 		expect(mock.state).toBe('initial');
-		expect(mock.frame).toBe(
-			`${title}${formatOptions(options, mock.value, 1)}\n${color.cyan(S_BAR_END)}\n`
-		);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render error', () => {
-		const title = `${color.gray(S_BAR)}\n${symbol('error')}  ${message}`;
-
 		multiselect({ message, options });
 		mock.submit();
-		const errorLines = mock.error.split('\n');
 
 		expect(mock.state).toBe('error');
-		expect(mock.frame).toBe(
-			[
-				title,
-				`${color.yellow(S_BAR)}  ` +
-					limitOptions({
-						cursor: 0,
-						maxItems: undefined,
-						options,
-						style(option, active) {
-							const selected = mock.value.includes(option.value);
-							return opt(
-								option,
-								active && selected
-									? 'active-selected'
-									: selected
-									? 'selected'
-									: active
-									? 'active'
-									: 'inactive'
-							);
-						},
-					})
-						.join(`\n${color.yellow(S_BAR)}  `)
-						.replace(new RegExp(`(${options[0].value}).+`), '$1'),
-				`${color.yellow(S_BAR_END)}  ${color.yellow(errorLines[0])}`,
-				`${color.hidden('-')}  ${errorLines[1]}`,
-				'',
-			].join('\n')
-		);
+		expect(mock.frame).toMatchSnapshot();
 	});
 
 	it('should render cancel', () => {
