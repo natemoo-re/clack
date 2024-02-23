@@ -1,0 +1,107 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`groupMultiselect should render error 1`] = `
+"[90m│[39m
+[33m▲[39m  test message
+[33m│[39m  [2m[22m[36m◻[39m changed packages
+[33m│[39m  │ [36m◻[39m [2m@scope/a[22m
+[33m│[39m  │ [36m◻[39m [2m@scope/b[22m
+[33m│[39m  └ [36m◻[39m [2m@scope/c[22m
+[33m│[39m  [2m[22m[2m◻[22m [2munchanged packages[22m
+[33m│[39m  [2m│ [22m[2m◻[22m [2m@scope/x[22m
+[33m│[39m  [2m│ [22m[2m◻[22m [2m@scope/y[22m
+[33m│[39m  [2m└ [22m[2m◻[22m [2m@scope/z[22m
+[33m└[39m  [33mPlease select at least one option.[39m
+[8m-[28m  [0m[2mPress [90m[47m[7m space [27m[49m[39m to select, [90m[47m[7m enter [27m[49m[39m to submit[22m[0m
+"
+`;
+
+exports[`groupMultiselect should render initial state 1`] = `
+"[90m│[39m
+[36m◆[39m  test message
+[36m│[39m  [2m[22m[36m◻[39m changed packages
+[36m│[39m  │ [36m◻[39m [2m@scope/a[22m
+[36m│[39m  │ [36m◻[39m [2m@scope/b[22m
+[36m│[39m  └ [36m◻[39m [2m@scope/c[22m
+[36m│[39m  [2m[22m[2m◻[22m [2munchanged packages[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/x[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/y[22m
+[36m│[39m  [2m└ [22m[2m◻[22m [2m@scope/z[22m
+[36m└[39m
+"
+`;
+
+exports[`groupMultiselect should render initial state with option active 1`] = `
+"[90m│[39m
+[36m◆[39m  test message
+[36m│[39m  [2m[22m[2m◻[22m [2mchanged packages[22m
+[36m│[39m  [2m│ [22m[36m◻[39m @scope/a
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/b[22m
+[36m│[39m  [2m└ [22m[2m◻[22m [2m@scope/c[22m
+[36m│[39m  [2m[22m[2m◻[22m [2munchanged packages[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/x[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/y[22m
+[36m│[39m  [2m└ [22m[2m◻[22m [2m@scope/z[22m
+[36m└[39m
+"
+`;
+
+exports[`groupMultiselect should render initial state with option active and selected 1`] = `
+"[90m│[39m
+[36m◆[39m  test message
+[36m│[39m  [2m[22m[2m◻[22m [2mchanged packages[22m
+[36m│[39m  [2m│ [22m[32m◼[39m @scope/a
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/b[22m
+[36m│[39m  [2m└ [22m[2m◻[22m [2m@scope/c[22m
+[36m│[39m  [2m[22m[2m◻[22m [2munchanged packages[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/x[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/y[22m
+[36m│[39m  [2m└ [22m[2m◻[22m [2m@scope/z[22m
+[36m└[39m
+"
+`;
+
+exports[`groupMultiselect should render initial state with option not active and selected 1`] = `
+"[90m│[39m
+[36m◆[39m  test message
+[36m│[39m  [2m[22m[2m◻[22m [2mchanged packages[22m
+[36m│[39m  [2m│ [22m[32m◼[39m [2m@scope/a[22m
+[36m│[39m  [2m│ [22m[36m◻[39m @scope/b
+[36m│[39m  [2m└ [22m[2m◻[22m [2m@scope/c[22m
+[36m│[39m  [2m[22m[2m◻[22m [2munchanged packages[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/x[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/y[22m
+[36m│[39m  [2m└ [22m[2m◻[22m [2m@scope/z[22m
+[36m└[39m
+"
+`;
+
+exports[`groupMultiselect should render initial with group active 1`] = `
+"[90m│[39m
+[36m◆[39m  test message
+[36m│[39m  [2m[22m[36m◻[39m changed packages
+[36m│[39m  │ [36m◻[39m [2m@scope/a[22m
+[36m│[39m  │ [36m◻[39m [2m@scope/b[22m
+[36m│[39m  └ [36m◻[39m [2m@scope/c[22m
+[36m│[39m  [2m[22m[2m◻[22m [2munchanged packages[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/x[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/y[22m
+[36m│[39m  [2m└ [22m[2m◻[22m [2m@scope/z[22m
+[36m└[39m
+"
+`;
+
+exports[`groupMultiselect should render initial with group selected 1`] = `
+"[90m│[39m
+[36m◆[39m  test message
+[36m│[39m  [2m[22m[32m◼[39m changed packages
+[36m│[39m  │ [32m◼[39m [2m@scope/a[22m
+[36m│[39m  │ [32m◼[39m [2m@scope/b[22m
+[36m│[39m  └ [32m◼[39m [2m@scope/c[22m
+[36m│[39m  [2m[22m[2m◻[22m [2munchanged packages[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/x[22m
+[36m│[39m  [2m│ [22m[2m◻[22m [2m@scope/y[22m
+[36m│[39m  [2m└ [22m[2m◻[22m [2m@scope/z[22m
+[36m└[39m
+"
+`;

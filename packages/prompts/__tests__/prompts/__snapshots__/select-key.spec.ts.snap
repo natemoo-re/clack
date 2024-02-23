@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`selectKey should render initial state 1`] = `
+"[90m│[39m
+[36m◆[39m  test message
+[36m│[39m  [46m[90m a [39m[49m a
+[36m│[39m  [90m[47m[7m b [27m[49m[39m b
+[36m│[39m  [90m[47m[7m c [27m[49m[39m c
+[36m└[39m
+"
+`;
+
+exports[`selectKey should render initial state with initialValue 1`] = `
+"[90m│[39m
+[36m◆[39m  test message
+[36m│[39m  [90m[47m[7m a [27m[49m[39m a
+[36m│[39m  [46m[90m b [39m[49m b
+[36m│[39m  [90m[47m[7m c [27m[49m[39m c
+[36m└[39m
+"
+`;

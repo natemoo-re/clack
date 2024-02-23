@@ -9,5 +9,5 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["packages"]
+  "include": ["packages", "setup.tests.ts"]
 }

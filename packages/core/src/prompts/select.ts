@@ -1,12 +1,14 @@
+import { exposeTestUtils } from '../utils';
 import Prompt, { PromptOptions } from './prompt';
 
-interface SelectOptions<T extends { value: any }> extends PromptOptions<SelectPrompt<T>> {
+export interface SelectOptions<T extends { value: any }> extends PromptOptions<SelectPrompt<T>> {
 	options: T[];
 	initialValue?: T['value'];
 }
+
 export default class SelectPrompt<T extends { value: any }> extends Prompt {
-	options: T[];
-	cursor: number = 0;
+	public options: T[];
+	public cursor: number;
 
 	private get _value() {
 		return this.options[this.cursor];
@@ -20,9 +22,13 @@ export default class SelectPrompt<T extends { value: any }> extends Prompt {
 		super(opts, false);
 
 		this.options = opts.options;
-		this.cursor = this.options.findIndex(({ value }) => value === opts.initialValue);
-		if (this.cursor === -1) this.cursor = 0;
+		this.cursor = Math.max(
+			this.options.findIndex(({ value }) => value === opts.initialValue),
+			0
+		);
 		this.changeValue();
+
+		this.exposeTestUtils();
 
 		this.on('cursor', (key) => {
 			switch (key) {
@@ -36,6 +42,19 @@ export default class SelectPrompt<T extends { value: any }> extends Prompt {
 					break;
 			}
 			this.changeValue();
+			this.exposeTestUtils();
+		});
+	}
+
+	private exposeTestUtils() {
+		exposeTestUtils<SelectPrompt<any>>({
+			options: this.options,
+			cursor: this.cursor,
+			value: this.value,
+			setCursor: (cursor) => {
+				this.cursor = cursor;
+				this.exposeTestUtils();
+			},
 		});
 	}
 }
