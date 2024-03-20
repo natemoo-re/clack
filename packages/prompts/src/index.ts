@@ -13,6 +13,7 @@ import {
 import isUnicodeSupported from 'is-unicode-supported';
 import color from 'picocolors';
 import { cursor, erase } from 'sisteransi';
+import { isCI } from 'std-env';
 
 export { isCancel } from '@clack/core';
 
@@ -644,6 +645,7 @@ export const spinner = () => {
 	let loop: NodeJS.Timeout;
 	let isSpinnerActive: boolean = false;
 	let _message: string = '';
+	let _prevMessage: string | undefined = undefined;
 
 	const handleExit = (code: number) => {
 		const msg = code > 1 ? 'Something went wrong' : 'Canceled';
@@ -672,19 +674,34 @@ export const spinner = () => {
 		process.removeListener('exit', handleExit);
 	};
 
+	const clearPrevMessage = () => {
+		if (_prevMessage === undefined) return;
+		if (isCI) process.stdout.write('\n');
+		const prevLines = _prevMessage.split('\n');
+		process.stdout.write(cursor.move(-999, prevLines.length - 1));
+		process.stdout.write(erase.down(prevLines.length));
+	};
+
+	const parseMessage = (msg: string): string => {
+		return msg.replace(/\.+$/, '');
+	};
+
 	const start = (msg: string = ''): void => {
 		isSpinnerActive = true;
 		unblock = block();
-		_message = msg.replace(/\.+$/, '');
+		_message = parseMessage(msg);
 		process.stdout.write(`${color.gray(S_BAR)}\n`);
 		let frameIndex = 0;
 		let dotsTimer = 0;
 		registerHooks();
 		loop = setInterval(() => {
+			if (isCI && _message === _prevMessage) {
+				return;
+			}
+			clearPrevMessage();
+			_prevMessage = _message;
 			const frame = color.magenta(frames[frameIndex]);
-			const loadingDots = '.'.repeat(Math.floor(dotsTimer)).slice(0, 3);
-			process.stdout.write(cursor.move(-999, 0));
-			process.stdout.write(erase.down(1));
+			const loadingDots = isCI ? '...' : '.'.repeat(Math.floor(dotsTimer)).slice(0, 3);
 			process.stdout.write(`${frame}  ${_message}${loadingDots}`);
 			frameIndex = frameIndex + 1 < frames.length ? frameIndex + 1 : 0;
 			dotsTimer = dotsTimer < frames.length ? dotsTimer + 0.125 : 0;
@@ -692,24 +709,23 @@ export const spinner = () => {
 	};
 
 	const stop = (msg: string = '', code: number = 0): void => {
-		_message = msg ?? _message;
 		isSpinnerActive = false;
 		clearInterval(loop);
+		clearPrevMessage();
 		const step =
 			code === 0
 				? color.green(S_STEP_SUBMIT)
 				: code === 1
 				? color.red(S_STEP_CANCEL)
 				: color.red(S_STEP_ERROR);
-		process.stdout.write(cursor.move(-999, 0));
-		process.stdout.write(erase.down(1));
+		_message = parseMessage(msg ?? _message);
 		process.stdout.write(`${step}  ${_message}\n`);
 		clearHooks();
 		unblock();
 	};
 
 	const message = (msg: string = ''): void => {
-		_message = msg ?? _message;
+		_message = parseMessage(msg ?? _message);
 	};
 
 	return {
