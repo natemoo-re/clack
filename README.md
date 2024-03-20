@@ -22,3 +22,12 @@
 https://user-images.githubusercontent.com/7118177/219649990-7afcb64a-246d-4ad2-9767-325298959790.mp4
 
 </div>
+
+<br />
+<br />
+
+<h3 align="center"><code>@clack/prompts</code> Play with it</h3>
+
+<div align="center">
+	<kbd> <br> <a href="https://stackblitz.com/edit/clack-prompts?file=index.js" target="_blank">Go to Stackblitz Example</a> <br> </kbd>
+</div>
