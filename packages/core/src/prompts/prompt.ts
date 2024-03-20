@@ -6,6 +6,7 @@ import { Readable, Writable } from 'node:stream';
 import { WriteStream } from 'node:tty';
 import { cursor, erase } from 'sisteransi';
 import wrap from 'wrap-ansi';
+import { strLength } from '../utils';
 
 function diffLines(a: string, b: string) {
 	if (a === b) return;
@@ -49,6 +50,88 @@ export interface PromptOptions<Self extends Prompt> {
 }
 
 export type State = 'initial' | 'active' | 'cancel' | 'submit' | 'error';
+
+export type LineOption = 'firstLine' | 'newLine' | 'lastLine';
+
+export interface FormatLineOptions {
+	/**
+	 * Define the start of line
+	 * @example
+	 * format('foo', {
+	 * 	line: {
+	 * 		start: '-'
+	 * 	}
+	 * })
+	 * //=> '- foo'
+	 */
+	start: string;
+	/**
+	 * Define the end of line
+	 * @example
+	 * format('foo', {
+	 * 	line: {
+	 * 		end: '-'
+	 * 	}
+	 * })
+	 * //=> 'foo -'
+	 */
+	end: string;
+	/**
+	 * Define the sides of line
+	 * @example
+	 * format('foo', {
+	 * 	line: {
+	 * 		sides: '-'
+	 * 	}
+	 * })
+	 * //=> '- foo -'
+	 */
+	sides: string;
+	/**
+	 * Define the style of line
+	 * @example
+	 * format('foo', {
+	 * 	line: {
+	 * 		style: (line) => `(${line})`
+	 * 	}
+	 * })
+	 * //=> '(foo)'
+	 */
+	style: (line: string) => string;
+}
+
+export interface FormatOptions extends Record<LineOption, Partial<FormatLineOptions>> {
+	/**
+	 * Shorthand to define values for each line
+	 * @example
+	 * format('foo', {
+	 * 	default: {
+	 * 		start: '-'
+	 * 	}
+	 * // equals
+	 * 	firstLine{
+	 * 		start: '-'
+	 * 	},
+	 * 	newLine{
+	 * 		start: '-'
+	 * 	},
+	 * 	lastLine{
+	 * 		start: '-'
+	 * 	},
+	 * })
+	 */
+	default: Partial<FormatLineOptions>;
+	/**
+	 * Define the max width of each line
+	 * @example
+	 * format('foo bar baz', {
+	 * 	maxWidth: 7
+	 * })
+	 * //=> 'foo bar\nbaz'
+	 */
+	maxWidth: number;
+	minWidth: number;
+}
 
 export default class Prompt {
 	protected input: Readable;
@@ -215,6 +298,101 @@ export default class Prompt {
 		const lines =
 			wrap(this._prevFrame, process.stdout.columns, { hard: true }).split('\n').length - 1;
 		this.output.write(cursor.move(-999, lines * -1));
+	}
+
+	public format(text: string, options?: Partial<FormatOptions>): string {
+		const getLineOption = <TLine extends LineOption, TKey extends keyof FormatLineOptions>(
+			line: TLine,
+			key: TKey
+		): NonNullable<FormatOptions[TLine][TKey]> => {
+			return (
+				key === 'style'
+					? options?.[line]?.[key] ?? options?.default?.[key] ?? ((line) => line)
+					: options?.[line]?.[key] ?? options?.[line]?.sides ?? options?.default?.[key] ?? ''
+			) as NonNullable<FormatOptions[TLine][TKey]>;
+		};
+		const getLineOptions = (line: LineOption): Omit<FormatLineOptions, 'sides'> => {
+			return {
+				start: getLineOption(line, 'start'),
+				end: getLineOption(line, 'end'),
+				style: getLineOption(line, 'style'),
+			};
+		};
+
+		const firstLine = getLineOptions('firstLine');
+		const newLine = getLineOptions('newLine');
+		const lastLine = getLineOptions('lastLine');
+
+		const emptySlots =
+			Math.max(
+				strLength(firstLine.start + firstLine.end),
+				strLength(newLine.start + newLine.end),
+				strLength(lastLine.start + lastLine.end)
+			) + 2;
+		const terminalWidth = process.stdout.columns || 80;
+		const maxWidth = options?.maxWidth ?? terminalWidth;
+		const minWidth = options?.minWidth ?? 1;
+
+		const formattedLines: string[] = [];
+		const paragraphs = text.split(/\n/g);
+
+		for (const paragraph of paragraphs) {
+			const words = paragraph.split(/\s/g);
+			let currentLine = '';
+
+			for (const word of words) {
+				if (strLength(currentLine + word) + emptySlots + 1 <= maxWidth) {
+					currentLine += ` ${word}`;
+				} else if (strLength(word) + emptySlots >= maxWidth) {
+					const splitIndex = maxWidth - strLength(currentLine) - emptySlots - 1;
+					formattedLines.push(currentLine + ' ' + word.slice(0, splitIndex));
+
+					const chunkLength = maxWidth - emptySlots;
+					let chunk = word.slice(splitIndex);
+					while (strLength(chunk) > chunkLength) {
+						formattedLines.push(chunk.slice(0, chunkLength));
+						chunk = chunk.slice(chunkLength);
+					}
+					currentLine = chunk;
+				} else {
+					formattedLines.push(currentLine);
+					currentLine = word;
+				}
+			}
+
+			formattedLines.push(currentLine);
+		}
+
+		return formattedLines
+			.map((line, i, ar) => {
+				const opt = <TPosition extends Exclude<keyof FormatLineOptions, 'sides'>>(
+					position: TPosition
+				): FormatLineOptions[TPosition] => {
+					return (
+						i === 0 && ar.length === 1
+							? options?.firstLine?.[position] ??
+							  options?.lastLine?.[position] ??
+							  firstLine[position]
+							: i === 0
+							? firstLine[position]
+							: i + 1 === ar.length
+							? lastLine[position]
+							: newLine[position]
+					) as FormatLineOptions[TPosition];
+				};
+				const startLine = opt('start');
+				const endLine = opt('end');
+				const styleLine = opt('style');
+				// only format the line without the leading space.
+				const leadingSpaceRegex = /^\s/;
+				const styledLine = leadingSpaceRegex.test(line)
+					? ' ' + styleLine(line.slice(1))
+					: styleLine(line);
+				const fullLine =
+					styledLine + ' '.repeat(Math.max(minWidth - strLength(styledLine) - emptySlots, 0));
+				return [startLine, fullLine, endLine].join(' ');
+			})
+			.join('\n');
 	}
 
 	private _prevFrame = '';
