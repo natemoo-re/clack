@@ -1,5 +1,11 @@
 # @clack/prompts
 
+## 0.8.1
+
+### Patch Changes
+
+- 360afeb: feat: adaptative max items
+
 ## 0.8.0
 
 ### Minor Changes
