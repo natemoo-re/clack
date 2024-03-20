@@ -730,8 +730,20 @@ function ansiRegex() {
 	return new RegExp(pattern, 'g');
 }
 
-export type PromptGroupAwaitedReturn<T> = {
+type Prettify<T> = {
+	[P in keyof T]: T[P];
+} & {};
+
+export type PromptGroupAwaitedReturn<T> = Prettify<{
 	[P in keyof T]: Exclude<Awaited<T[P]>, symbol>;
+}>;
+
+export type PromptWithOptions<TResults, TReturn> = (opts: {
+	results: PromptGroupAwaitedReturn<TResults>;
+}) => TReturn;
+
+export type PromptGroup<T> = {
+	[P in keyof T]: PromptWithOptions<Partial<Omit<T, P>>, void | Promise<T[P] | void>>;
 };
 
 export interface PromptGroupOptions<T> {
@@ -739,18 +751,8 @@ export interface PromptGroupOptions<T> {
 	 * Control how the group can be canceled
 	 * if one of the prompts is canceled.
 	 */
-	onCancel?: (opts: { results: Prettify<Partial<PromptGroupAwaitedReturn<T>>> }) => void;
+	onCancel?: PromptWithOptions<Partial<T>, void>;
 }
-
-type Prettify<T> = {
-	[P in keyof T]: T[P];
-} & {};
-
-export type PromptGroup<T> = {
-	[P in keyof T]: (opts: {
-		results: Prettify<Partial<PromptGroupAwaitedReturn<Omit<T, P>>>>;
-	}) => void | Promise<T[P] | void>;
-};
 
 /**
  * Define a group of prompts to be displayed
@@ -759,7 +761,7 @@ export type PromptGroup<T> = {
 export const group = async <T>(
 	prompts: PromptGroup<T>,
 	opts?: PromptGroupOptions<T>
-): Promise<Prettify<PromptGroupAwaitedReturn<T>>> => {
+): Promise<PromptGroupAwaitedReturn<T>> => {
 	const results = {} as any;
 	const promptNames = Object.keys(prompts);
 
@@ -782,6 +784,54 @@ export const group = async <T>(
 	}
 
 	return results;
+};
+
+type NextWorkflowBuilder<
+	TResults extends Record<string, unknown>,
+	TKey extends string,
+	TResult,
+> = WorkflowBuilder<
+	{
+		[Key in keyof TResults]: Key extends TKey ? TResult : TResults[Key];
+	} & {
+		[Key in TKey]: TResult;
+	}
+>;
+
+class WorkflowBuilder<TResults extends Record<string, unknown> = {}> {
+	private results: TResults = {} as TResults;
+	private prompts: Record<string, PromptWithOptions<TResults, unknown>> = {};
+	private cancelCallback: PromptWithOptions<Partial<TResults>, void> | undefined;
+
+	public step<TKey extends string, TResult>(
+		key: TKey extends keyof TResults ? never : TKey,
+		prompt: PromptWithOptions<TResults, TResult>
+	): NextWorkflowBuilder<TResults, TKey, TResult> {
+		this.prompts[key] = prompt;
+		return this as NextWorkflowBuilder<TResults, TKey, TResult>;
+	}
+
+	public onCancel(cb: PromptWithOptions<Partial<TResults>, void>): WorkflowBuilder<TResults> {
+		this.cancelCallback = cb;
+		return this;
+	}
+
+	public async run(): Promise<PromptGroupAwaitedReturn<TResults>> {
+		for (const [key, prompt] of Object.entries(this.prompts)) {
+			const result = await prompt({ results: this.results as any });
+			if (isCancel(result)) {
+				this.cancelCallback?.({ results: this.results as any });
+				continue;
+			}
+			//@ts-ignore
+			this.results[key] = result;
+		}
+		return this.results as PromptGroupAwaitedReturn<TResults>;
+	}
+}
+
+export const workflow = () => {
+	return new WorkflowBuilder();
 };
 
 export type Task = {

@@ -123,7 +123,7 @@ s.stop('Installed via npm');
 
 ## Utilities
 
-### Grouping
+### Group
 
 Grouping prompts together is a great way to keep your code organized. This accepts a JSON object with a name that can be used to reference the group later. The second argument is an optional but has a `onCancel` callback that will be called if the user cancels one of the prompts in the group.
 
@@ -155,6 +155,73 @@ const group = await p.group(
 );
 
 console.log(group.name, group.age, group.color);
+```
+
+### Workflow
+
+Works just like `group` but infer types way better and treats your group like a workflow, allowing you to create conditional steps (forks) along the process.
+
+```js
+import * as p from '@clack/prompts';
+
+const results = await p
+  .workflow()
+  .step('name', () => p.text({ message: 'What is your package name?' }))
+  .step('type', () =>
+    p.select({
+      message: `Pick a project type:`,
+      initialValue: 'ts',
+      maxItems: 5,
+      options: [
+        { value: 'ts', label: 'TypeScript' },
+        { value: 'js', label: 'JavaScript' },
+        { value: 'rust', label: 'Rust' },
+        { value: 'go', label: 'Go' },
+        { value: 'python', label: 'Python' },
+        { value: 'coffee', label: 'CoffeeScript', hint: 'oh no' },
+      ],
+    })
+  )
+  .step('install', () =>
+    p.confirm({
+      message: 'Install dependencies?',
+      initialValue: false,
+    })
+  )
+  .step('fork', ({ results }) => {
+    if (results.install === true) {
+      return p
+        .workflow()
+        .step('package', () =>
+          p.select({
+            message: 'Pick a package manager:',
+            initialValue: 'pnpm',
+            options: [
+              {
+                label: 'npm',
+                value: 'npm',
+              },
+              {
+                label: 'yarn',
+                value: 'yarn',
+              },
+              {
+                label: 'pnpm',
+                value: 'pnpm',
+              },
+            ],
+          })
+        )
+        .run();
+    }
+  })
+  .onCancel(() => {
+    p.cancel('Workflow canceled');
+    process.exit(0);
+  })
+  .run();
+
+console.log(results);
 ```
 
 ### Tasks
