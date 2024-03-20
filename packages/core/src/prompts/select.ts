@@ -1,11 +1,12 @@
+import { NonEmptyArray } from '../utility-types';
 import Prompt, { PromptOptions } from './prompt';
 
 interface SelectOptions<T extends { value: any }> extends PromptOptions<SelectPrompt<T>> {
-	options: T[];
+	options: SelectPrompt<T>['options'];
 	initialValue?: T['value'];
 }
 export default class SelectPrompt<T extends { value: any }> extends Prompt {
-	options: T[];
+	options: NonEmptyArray<T>;
 	cursor: number = 0;
 
 	private get _value() {

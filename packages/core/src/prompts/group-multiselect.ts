@@ -1,14 +1,15 @@
+import { NonEmptyArray } from '../utility-types';
 import Prompt, { PromptOptions } from './prompt';
 
 interface GroupMultiSelectOptions<T extends { value: any }>
 	extends PromptOptions<GroupMultiSelectPrompt<T>> {
-	options: Record<string, T[]>;
+	options: Record<string, NonEmptyArray<T>>;
 	initialValues?: T['value'][];
 	required?: boolean;
 	cursorAt?: T['value'];
 }
 export default class GroupMultiSelectPrompt<T extends { value: any }> extends Prompt {
-	options: (T & { group: string | boolean })[];
+	options: NonEmptyArray<T & { group: string | boolean }>;
 	cursor: number = 0;
 
 	getGroupItems(group: string): T[] {

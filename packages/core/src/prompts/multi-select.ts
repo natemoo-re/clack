@@ -1,13 +1,14 @@
+import { NonEmptyArray } from '../utility-types';
 import Prompt, { PromptOptions } from './prompt';
 
 interface MultiSelectOptions<T extends { value: any }> extends PromptOptions<MultiSelectPrompt<T>> {
-	options: T[];
+	options: MultiSelectPrompt<T>['options'];
 	initialValues?: T['value'][];
 	required?: boolean;
 	cursorAt?: T['value'];
 }
 export default class MultiSelectPrompt<T extends { value: any }> extends Prompt {
-	options: T[];
+	options: NonEmptyArray<T>;
 	cursor: number = 0;
 
 	private get _value() {

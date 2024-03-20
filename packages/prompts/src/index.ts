@@ -4,6 +4,7 @@ import {
 	GroupMultiSelectPrompt,
 	isCancel,
 	MultiSelectPrompt,
+	NonEmptyArray,
 	PasswordPrompt,
 	SelectKeyPrompt,
 	SelectPrompt,
@@ -213,7 +214,7 @@ type Option<Value> = Value extends Primitive
 
 export interface SelectOptions<Value> {
 	message: string;
-	options: Option<Value>[];
+	options: NonEmptyArray<Option<Value>>;
 	initialValue?: Value;
 	maxItems?: number;
 }
@@ -310,7 +311,7 @@ export const selectKey = <Value extends string>(opts: SelectOptions<Value>) => {
 
 export interface MultiSelectOptions<Value> {
 	message: string;
-	options: Option<Value>[];
+	options: NonEmptyArray<Option<Value>>;
 	initialValues?: Value[];
 	maxItems?: number;
 	required?: boolean;
@@ -424,7 +425,7 @@ export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 
 export interface GroupMultiSelectOptions<Value> {
 	message: string;
-	options: Record<string, Option<Value>[]>;
+	options: Record<string, NonEmptyArray<Option<Value>>>;
 	initialValues?: Value[];
 	required?: boolean;
 	cursorAt?: Value;
