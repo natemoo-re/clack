@@ -39,18 +39,23 @@ async function main() {
 						{ value: 'rust', label: 'Rust' },
 						{ value: 'go', label: 'Go' },
 						{ value: 'python', label: 'Python' },
-						{ value: 'coffee', label: 'CoffeeScript', hint: 'oh no' },
+						{ value: 'coffee', label: 'CoffeeScript', disabled: true, hint: 'oh no' },
 					],
 				}),
 			tools: () =>
 				p.multiselect({
 					message: 'Select additional tools.',
 					initialValues: ['prettier', 'eslint'],
+					maxItems: 5,
 					options: [
 						{ value: 'prettier', label: 'Prettier', hint: 'recommended' },
 						{ value: 'eslint', label: 'ESLint', hint: 'recommended' },
 						{ value: 'stylelint', label: 'Stylelint' },
-						{ value: 'gh-action', label: 'GitHub Action' },
+						{ value: 'gh-action', label: 'GitHub Actions' },
+						{ value: 'changeset', label: 'Changeset', disabled: true },
+						{ value: 'mocha', label: 'Mocha', disabled: true },
+						{ value: 'jest', label: 'Jest' },
+						{ value: 'vitest', label: 'Vitest' },
 					],
 				}),
 			install: () =>

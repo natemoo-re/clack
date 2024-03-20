@@ -8,7 +8,7 @@ import {
 	SelectKeyPrompt,
 	SelectPrompt,
 	State,
-	TextPrompt
+	TextPrompt,
 } from '@clack/core';
 import isUnicodeSupported from 'is-unicode-supported';
 import color from 'picocolors';
@@ -211,23 +211,28 @@ type Option<Value> = Value extends Primitive
 	? { value: Value; label?: string; hint?: string }
 	: { value: Value; label: string; hint?: string };
 
+type DisableableOption<Value> = Option<Value> & { disabled?: boolean };
+
 export interface SelectOptions<Value> {
 	message: string;
-	options: Option<Value>[];
+	options: DisableableOption<Value>[];
 	initialValue?: Value;
 	maxItems?: number;
 }
 
 export const select = <Value>(opts: SelectOptions<Value>) => {
-	const opt = (option: Option<Value>, state: 'inactive' | 'active' | 'selected' | 'cancelled') => {
+	const opt = (
+		option: DisableableOption<Value>,
+		state: 'inactive' | 'active' | 'selected' | 'cancelled'
+	) => {
 		const label = option.label ?? String(option.value);
 		switch (state) {
 			case 'selected':
 				return `${color.dim(label)}`;
 			case 'active':
-				return `${color.green(S_RADIO_ACTIVE)} ${label} ${
-					option.hint ? color.dim(`(${option.hint})`) : ''
-				}`;
+				return `${
+					option.disabled ? color.dim(S_RADIO_ACTIVE) : color.green(S_RADIO_ACTIVE)
+				} ${label} ${option.hint ? color.dim(`(${option.hint})`) : ''}`;
 			case 'cancelled':
 				return `${color.strikethrough(color.dim(label))}`;
 			default:
@@ -238,6 +243,11 @@ export const select = <Value>(opts: SelectOptions<Value>) => {
 	return new SelectPrompt({
 		options: opts.options,
 		initialValue: opts.initialValue,
+		validate(value) {
+			if (this.options.find((o) => o.value === value)?.disabled) {
+				return 'Selected option is disabled.';
+			}
+		},
 		render() {
 			const title = `${color.gray(S_BAR)}\n${symbol(this.state)}  ${opts.message}\n`;
 
@@ -249,6 +259,15 @@ export const select = <Value>(opts: SelectOptions<Value>) => {
 						this.options[this.cursor],
 						'cancelled'
 					)}\n${color.gray(S_BAR)}`;
+				case 'error':
+					return `${title}${color.yellow(S_BAR)}  ${limitOptions({
+						cursor: this.cursor,
+						options: this.options,
+						maxItems: opts.maxItems,
+						style: (item, active) => opt(item, active ? 'active' : 'inactive'),
+					}).join(`\n${color.yellow(S_BAR)}  `)}\n${color.yellow(S_BAR_END)}  ${color.yellow(
+						this.error
+					)}\n`;
 				default: {
 					return `${title}${color.cyan(S_BAR)}  ${limitOptions({
 						cursor: this.cursor,
@@ -310,7 +329,7 @@ export const selectKey = <Value extends string>(opts: SelectOptions<Value>) => {
 
 export interface MultiSelectOptions<Value> {
 	message: string;
-	options: Option<Value>[];
+	options: DisableableOption<Value>[];
 	initialValues?: Value[];
 	maxItems?: number;
 	required?: boolean;
@@ -318,26 +337,30 @@ export interface MultiSelectOptions<Value> {
 }
 export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 	const opt = (
-		option: Option<Value>,
+		option: DisableableOption<Value>,
 		state: 'inactive' | 'active' | 'selected' | 'active-selected' | 'submitted' | 'cancelled'
 	) => {
 		const label = option.label ?? String(option.value);
-		if (state === 'active') {
-			return `${color.cyan(S_CHECKBOX_ACTIVE)} ${label} ${
-				option.hint ? color.dim(`(${option.hint})`) : ''
-			}`;
-		} else if (state === 'selected') {
-			return `${color.green(S_CHECKBOX_SELECTED)} ${color.dim(label)}`;
-		} else if (state === 'cancelled') {
-			return `${color.strikethrough(color.dim(label))}`;
-		} else if (state === 'active-selected') {
-			return `${color.green(S_CHECKBOX_SELECTED)} ${label} ${
-				option.hint ? color.dim(`(${option.hint})`) : ''
-			}`;
-		} else if (state === 'submitted') {
-			return `${color.dim(label)}`;
+		switch (state) {
+			case 'active':
+				return `${
+					option.disabled ? color.dim(S_CHECKBOX_ACTIVE) : color.cyan(S_CHECKBOX_ACTIVE)
+				} ${label} ${option.hint ? color.dim(`(${option.hint})`) : ''}`;
+			case 'selected':
+				return `${
+					option.disabled ? color.dim(S_CHECKBOX_SELECTED) : color.green(S_CHECKBOX_SELECTED)
+				} ${color.dim(label)}`;
+			case 'cancelled':
+				return `${color.strikethrough(color.dim(label))}`;
+			case 'active-selected':
+				return `${
+					option.disabled ? color.dim(S_CHECKBOX_SELECTED) : color.green(S_CHECKBOX_SELECTED)
+				} ${label} ${option.hint ? color.dim(`(${option.hint})`) : ''}`;
+			case 'submitted':
+				return `${color.dim(label)}`;
+			default:
+				return `${color.dim(S_CHECKBOX_INACTIVE)} ${color.dim(label)}`;
 		}
-		return `${color.dim(S_CHECKBOX_INACTIVE)} ${color.dim(label)}`;
 	};
 
 	return new MultiSelectPrompt({
@@ -346,7 +369,7 @@ export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 		required: opts.required ?? true,
 		cursorAt: opts.cursorAt,
 		validate(selected: Value[]) {
-			if (this.required && selected.length === 0)
+			if (this.required && selected.length === 0) {
 				return `Please select at least one option.\n${color.reset(
 					color.dim(
 						`Press ${color.gray(color.bgWhite(color.inverse(' space ')))} to select, ${color.gray(
@@ -354,11 +377,25 @@ export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 						)} to submit`
 					)
 				)}`;
+			}
+			const disabledOptions = opts.options
+				.map((option) => {
+					if (selected.includes(option.value) && option.disabled) {
+						return option.label ?? option.value;
+					}
+					return undefined;
+				})
+				.filter(Boolean);
+			if (disabledOptions.length) {
+				return `${disabledOptions.join(', ')} ${
+					disabledOptions.length > 1 ? 'options are' : 'option is'
+				} disabled.`;
+			}
 		},
 		render() {
-			let title = `${color.gray(S_BAR)}\n${symbol(this.state)}  ${opts.message}\n`;
+			let title = `${color.gray(S_BAR)}\n${symbol(this.state)}  ${opts.message}`;
 
-			const styleOption = (option: Option<Value>, active: boolean) => {
+			const styleOption = (option: DisableableOption<Value>, active: boolean) => {
 				const selected = this.value.includes(option.value);
 				if (active && selected) {
 					return opt(option, 'active-selected');
@@ -371,7 +408,7 @@ export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 
 			switch (this.state) {
 				case 'submit': {
-					return `${title}${color.gray(S_BAR)}  ${
+					return `${title}\n${color.gray(S_BAR)}  ${
 						this.options
 							.filter(({ value }) => this.value.includes(value))
 							.map((option) => opt(option, 'submitted'))
@@ -383,7 +420,7 @@ export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 						.filter(({ value }) => this.value.includes(value))
 						.map((option) => opt(option, 'cancelled'))
 						.join(color.dim(', '));
-					return `${title}${color.gray(S_BAR)}  ${
+					return `${title}\n${color.gray(S_BAR)}  ${
 						label.trim() ? `${label}\n${color.gray(S_BAR)}` : ''
 					}`;
 				}
@@ -391,26 +428,18 @@ export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 					const footer = this.error
 						.split('\n')
 						.map((ln, i) =>
-							i === 0 ? `${color.yellow(S_BAR_END)}  ${color.yellow(ln)}` : `   ${ln}`
+							i === 0 ? `${color.yellow(S_BAR_END)}  ${color.yellow(ln)}` : `${color.hidden('-')}  ${ln}`
 						)
 						.join('\n');
-					return (
-						title +
-						color.yellow(S_BAR) +
-						'  ' +
-						limitOptions({
-							options: this.options,
-							cursor: this.cursor,
-							maxItems: opts.maxItems,
-							style: styleOption,
-						}).join(`\n${color.yellow(S_BAR)}  `) +
-						'\n' +
-						footer +
-						'\n'
-					);
+					return `${title}\n${color.yellow(S_BAR)}  ${limitOptions({
+						options: this.options,
+						cursor: this.cursor,
+						maxItems: opts.maxItems,
+						style: styleOption,
+					}).join(`\n${color.yellow(S_BAR)}  `)}\n${footer}\n`;
 				}
 				default: {
-					return `${title}${color.cyan(S_BAR)}  ${limitOptions({
+					return `${title}\n${color.cyan(S_BAR)}  ${limitOptions({
 						options: this.options,
 						cursor: this.cursor,
 						maxItems: opts.maxItems,
