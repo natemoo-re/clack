@@ -216,6 +216,7 @@ export interface SelectOptions<Value> {
 	options: Option<Value>[];
 	initialValue?: Value;
 	maxItems?: number;
+	validate?: (value: string) => string | void;
 }
 
 export const select = <Value>(opts: SelectOptions<Value>) => {
@@ -236,6 +237,7 @@ export const select = <Value>(opts: SelectOptions<Value>) => {
 	};
 
 	return new SelectPrompt({
+		validate: opts.validate,
 		options: opts.options,
 		initialValue: opts.initialValue,
 		render() {
@@ -249,6 +251,20 @@ export const select = <Value>(opts: SelectOptions<Value>) => {
 						this.options[this.cursor],
 						'cancelled'
 					)}\n${color.gray(S_BAR)}`;
+				case 'error': {
+					const footer = this.error
+						.split('\n')
+						.map((ln, i) =>
+							i === 0 ? `${color.yellow(S_BAR_END)}  ${color.yellow(ln)}` : `   ${ln}`
+						)
+						.join('\n');
+					return `${title}${color.yellow(S_BAR)}  ${limitOptions({
+						cursor: this.cursor,
+						options: this.options,
+						maxItems: opts.maxItems,
+						style: (item, active) => opt(item, active ? 'active' : 'inactive'),
+					}).join(`\n${color.yellow(S_BAR)}  `)}\n${footer}`;
+				}
 				default: {
 					return `${title}${color.cyan(S_BAR)}  ${limitOptions({
 						cursor: this.cursor,
@@ -315,6 +331,7 @@ export interface MultiSelectOptions<Value> {
 	maxItems?: number;
 	required?: boolean;
 	cursorAt?: Value;
+	validate?: (value: Value[]) => string | void;
 }
 export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 	const opt = (
@@ -346,6 +363,10 @@ export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 		required: opts.required ?? true,
 		cursorAt: opts.cursorAt,
 		validate(selected: Value[]) {
+			if (opts.validate) {
+				const error = opts.validate(selected);
+				if (error) return error;
+			}
 			if (this.required && selected.length === 0)
 				return `Please select at least one option.\n${color.reset(
 					color.dim(
