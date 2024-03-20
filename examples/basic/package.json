@@ -10,7 +10,8 @@
   },
   "scripts": {
     "start": "jiti ./index.ts",
-    "spinner": "jiti ./spinner.ts"
+    "spinner": "jiti ./spinner.ts",
+    "file": "jiti ./file-selection.ts"
   },
   "devDependencies": {
     "jiti": "^1.17.0"

@@ -11,7 +11,7 @@ Effortlessly build beautiful command-line apps 🪄 [Try the demo](https://stack
 - 🤏 80% smaller than other options
 - 💎 Beautiful, minimal UI
 - ✅ Simple API
-- 🧱 Comes with `text`, `confirm`, `select`, `multiselect`, and `spinner` components
+- 🧱 Comes with `text`, `confirm`, `select`, `multiselect`, `path`, and `spinner` components
 
 ## Basics
 
@@ -46,7 +46,7 @@ if (isCancel(value)) {
 
 ### Text
 
-The text component accepts a single line of text.
+The `text` component accepts a single line of text.
 
 ```js
 import { text } from '@clack/prompts';
@@ -63,7 +63,7 @@ const meaning = await text({
 
 ### Confirm
 
-The confirm component accepts a yes or no answer. The result is a boolean value of `true` or `false`.
+The `confirm` component accepts a yes or no answer. The result is a boolean value of `true` or `false`.
 
 ```js
 import { confirm } from '@clack/prompts';
@@ -75,7 +75,7 @@ const shouldContinue = await confirm({
 
 ### Select
 
-The select component allows a user to choose one value from a list of options. The result is the `value` prop of a given option.
+The `select` component allows a user to choose one value from a list of options. The result is the `value` prop of a given option.
 
 ```js
 import { select } from '@clack/prompts';
@@ -108,9 +108,45 @@ const additionalTools = await multiselect({
 });
 ```
 
+### Path
+
+The `path` component allows user to select a file/folder using one of two approaches:
+
+#### Select:
+
+Selecting the desired file/folder using arrow keys to navigate through directories.
+
+```js
+import { path } from '@clack/prompts';
+
+const projectPath = await path({
+  type: 'select',
+  message: 'Pick a project:',
+  initialValue: process.cwd(), // current working dir,
+  onlyShowDir: true,
+  maxItems: 12,
+});
+```
+
+#### Text:
+
+Typing the path with built-in autosuggestion and autocomplete features.
+
+```js
+import { path } from '@clack/prompts';
+
+const projectPath = await path({
+  type: 'text',
+  message: 'Pick a project:',
+  initialValue: process.cwd(), // current working dir,
+  placeholder: './app',
+  onlyShowDir: true,
+});
+```
+
 ### Spinner
 
-The spinner component surfaces a pending action, such as a long-running download or dependency installation.
+The `spinner` component surfaces a pending action, such as a long-running download or dependency installation.
 
 ```js
 import { spinner } from '@clack/prompts';

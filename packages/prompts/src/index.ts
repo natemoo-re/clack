@@ -5,6 +5,7 @@ import {
 	isCancel,
 	MultiSelectPrompt,
 	PasswordPrompt,
+	PathPrompt,
 	SelectKeyPrompt,
 	SelectPrompt,
 	State,
@@ -203,6 +204,123 @@ export const confirm = (opts: ConfirmOptions) => {
 			}
 		},
 	}).prompt() as Promise<boolean | symbol>;
+};
+
+interface PathNode {
+	name: string;
+	children: PathNode[] | undefined;
+}
+
+export type PathOptions = {
+	message: string;
+	/**
+	 * Starting absolute path
+	 * @default process.cwd() // current working dir
+	 */
+	initialValue?: string;
+	/**
+	 * Exclude files from options
+	 * @default false
+	 */
+	onlyShowDir?: boolean;
+} & (
+	| {
+			type: 'text';
+			placeholder?: string;
+			validate?: (value: string) => string | void;
+	  }
+	| {
+			type: 'select';
+			/**
+			 * Limit the number of options that appears at once
+			 */
+			maxItems?: number;
+	  }
+);
+
+export const path = (opts: PathOptions) => {
+	const opt = (node: PathNode, state: boolean, depth: number): string => {
+		return [
+			' '.repeat(depth),
+			state ? color.green(S_RADIO_ACTIVE) : color.dim(S_RADIO_INACTIVE),
+			' ',
+			node.name,
+			node.children ? (node.children.length ? ` v` : ` >`) : undefined,
+		].join('');
+	};
+
+	return new PathPrompt({
+		type: opts.type,
+		initialValue: opts.initialValue,
+		onlyShowDir: opts.onlyShowDir,
+		maxHintOptions: 10,
+		placeholder: 'placeholder' in opts ? opts.placeholder : '',
+		validate: 'validate' in opts ? opts.validate : undefined,
+		render() {
+			const option = this.option;
+			const map = (node: PathNode, index: number = 0, depth: number = 0): string => {
+				const state =
+					option.index === index && option.depth === depth && option.node.name === node.name;
+				return node.children && node.children.length
+					? [
+							opt(node, state, depth),
+							node.children.map((_node, i) => map(_node, i, depth + 1)).join('\n'),
+					  ].join('\n')
+					: opt(node, state, depth);
+			};
+
+			const title = [color.gray(S_BAR), `${symbol(this.state)}  ${opts.message}`].join('\n');
+
+			switch (this.state) {
+				case 'submit':
+					return [title, `${color.gray(S_BAR)}  ${color.dim(this.value)}`].join('\n');
+				case 'cancel':
+					return [
+						title,
+						`${color.gray(S_BAR)}  ${color.dim(color.strikethrough(this.value))}\n${color.gray(
+							S_BAR
+						)}`,
+					].join('\n');
+				case 'error':
+					return [
+						title,
+						`${color.yellow(S_BAR)}  ${this.value}`,
+						`${color.yellow(S_BAR_END)}  ${color.yellow(this.error)}\n`,
+					].join('\n');
+				default:
+					if (opts.type === 'select') {
+						return [
+							title,
+							`${color.cyan(S_BAR)}  ` +
+								limitOptions({
+									cursor: this.cursor,
+									maxItems: opts.maxItems,
+									options: map(this.root).split(/\n/g),
+									style: (option) => option,
+								}).join(`\n${color.cyan(S_BAR)}  `),
+							color.cyan(S_BAR_END),
+						].join('\n');
+					}
+
+					const placeholder = opts.placeholder
+						? color.inverse(opts.placeholder[0]) + color.dim(opts.placeholder.slice(1))
+						: color.inverse(color.hidden('_'));
+
+					const hintOptions = this.hintOptions.map((hint, index) =>
+						index === this.hintIndex ? color.cyan(hint) : color.dim(hint)
+					);
+
+					return [
+						title,
+						`${color.cyan(S_BAR)}  ${this.value ? this.valueWithHint : placeholder}`,
+						hintOptions.length ? `${color.cyan(S_BAR)} ${hintOptions.join(' ')}` : '',
+						color.cyan(S_BAR_END),
+					]
+						.filter(Boolean)
+						.join('\n');
+			}
+		},
+	}).prompt();
 };
 
 type Primitive = Readonly<string | boolean | number>;

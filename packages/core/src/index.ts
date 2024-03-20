@@ -2,6 +2,7 @@ export { default as ConfirmPrompt } from './prompts/confirm';
 export { default as GroupMultiSelectPrompt } from './prompts/group-multiselect';
 export { default as MultiSelectPrompt } from './prompts/multi-select';
 export { default as PasswordPrompt } from './prompts/password';
+export { default as PathPrompt } from './prompts/path';
 export { default as Prompt, isCancel } from './prompts/prompt';
 export type { State } from './prompts/prompt';
 export { default as SelectPrompt } from './prompts/select';
