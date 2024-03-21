@@ -30,6 +30,7 @@ jobs:
         run: pnpm install
       # TODO: is this manual build step actually needed?
       # `prepack` hook _should_ run but doesn't seem to.
+      - run: pnpm run type-check
       - run: pnpm run build
       - uses: changesets/action@v1
         if: ${{ github.event_name != 'pull_request' }}
