@@ -1,3 +1,4 @@
+import { platform } from 'node:os';
 import { stdin, stdout } from 'node:process';
 import type { Key } from 'node:readline';
 import * as readline from 'node:readline';
@@ -21,7 +22,9 @@ export function setRawMode(input: Readable, value: boolean) {
 	if (i.isTTY) i.setRawMode(value);
 }
 
-const isWindows = globalThis.process.platform.startsWith('win');
+function isWindows(): boolean {
+	return platform().startsWith('win');
+}
 
 export function block({
 	input = stdin,
@@ -58,10 +61,10 @@ export function block({
 
 	return () => {
 		input.off('keypress', clear);
-		if (hideCursor) process.stdout.write(cursor.show);
+		if (hideCursor) output.write(cursor.show);
 
 		// Prevent Windows specific issues: https://github.com/natemoo-re/clack/issues/176
-		if (input.isTTY && !isWindows) input.setRawMode(false);
+		if (input.isTTY && !isWindows()) input.setRawMode(false);
 
 		// @ts-expect-error fix for https://github.com/nodejs/node/issues/31762#issuecomment-1441223907
 		rl.terminal = false;

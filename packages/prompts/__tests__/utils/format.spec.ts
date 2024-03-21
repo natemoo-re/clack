@@ -4,11 +4,10 @@ import { formatPlaceholder, limitOptions } from '../../src/utils';
 
 describe('format', () => {
 	describe('limitOptions()', () => {
+		const options = Array.from(Array(40).keys()).map(String);
 		const limit = color.dim('...');
 
 		it('should not limit options', () => {
-			const options = Array.from(Array(10).keys()).map(String);
-
 			const result = limitOptions({
 				options,
 				maxItems: undefined,
@@ -22,7 +21,6 @@ describe('format', () => {
 		});
 
 		it('should limit bottom options', () => {
-			const options = Array.from(Array(10).keys()).map(String);
 			const maxItems = 5;
 
 			const result = limitOptions({
@@ -40,7 +38,6 @@ describe('format', () => {
 		});
 
 		it('should limit top options', () => {
-			const options = Array.from(Array(10).keys()).map(String);
 			const maxItems = 5;
 
 			const result = limitOptions({
@@ -58,7 +55,6 @@ describe('format', () => {
 		});
 
 		it('should limit top and bottom options', () => {
-			const options = Array.from(Array(10).keys()).map(String);
 			const maxItems = 5;
 			const middleOption = Math.floor(maxItems / 2);
 			const cursor = Math.floor(options.length / 2);
@@ -75,6 +71,24 @@ describe('format', () => {
 			expect(result).toHaveLength(maxItems);
 			expect(result[0]).toBe(limit);
 			expect(result[middleOption]).toBe(options[cursor]);
+			expect(result[result.length - 1]).toBe(limit);
+		});
+
+		it('should limit by terminal rows', () => {
+			const maxTerminalRows = 20;
+			process.stdout.rows = maxTerminalRows;
+
+			const result = limitOptions({
+				options,
+				maxItems: undefined,
+				cursor: 0,
+				style(option, active) {
+					return option;
+				},
+			});
+
+			expect(result).toHaveLength(maxTerminalRows - 4);
+			expect(result[0]).toBe(options[0]);
 			expect(result[result.length - 1]).toBe(limit);
 		});
 	});

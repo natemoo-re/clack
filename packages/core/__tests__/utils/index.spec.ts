@@ -1,3 +1,4 @@
+import { platform } from 'node:os';
 import { stdin, stdout } from 'node:process';
 import * as readline from 'node:readline';
 import { cursor } from 'sisteransi';
@@ -28,6 +29,10 @@ jest.mock('node:process', () => ({
 	stdout: {
 		write: jest.fn(),
 	},
+}));
+
+jest.mock('node:os', () => ({
+	platform: jest.fn(() => 'linux'),
 }));
 
 describe('Utils', () => {
@@ -136,7 +141,18 @@ describe('Utils', () => {
 
 			block()();
 
-			expect(stdin.setRawMode).toHaveBeenCalledWith(false);
+			expect(stdin.setRawMode).toHaveBeenCalledTimes(2);
+			expect(stdin.setRawMode).toHaveBeenNthCalledWith(2, false);
+		});
+
+		it('should not disable input raw mode on Windows', () => {
+			stdin.isTTY = true;
+			(platform as jest.Mock).mockReturnValueOnce('win32');
+
+			block()();
+
+			expect(stdin.setRawMode).toHaveBeenCalledTimes(1);
+			expect(stdin.setRawMode).toHaveBeenCalledWith(true);
 		});
 
 		it('should close readline interface', () => {
