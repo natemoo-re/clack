@@ -1,4 +1,4 @@
-import Prompt, { PromptOptions } from './prompt';
+import Prompt, { type PromptOptions } from './prompt';
 
 interface GroupMultiSelectOptions<T extends { value: any }>
 	extends PromptOptions<GroupMultiSelectPrompt<T>> {

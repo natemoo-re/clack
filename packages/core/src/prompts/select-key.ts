@@ -1,4 +1,4 @@
-import Prompt, { PromptOptions } from './prompt';
+import Prompt, { type PromptOptions } from './prompt';
 
 interface SelectKeyOptions<T extends { value: any }> extends PromptOptions<SelectKeyPrompt<T>> {
 	options: T[];

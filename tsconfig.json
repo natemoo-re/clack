@@ -3,11 +3,15 @@
     "noEmit": true,
     "module": "ESNext",
     "target": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "lib": ["ES2022"],
     "paths": {
       "@clack/core": ["./packages/core/src"]
     }
