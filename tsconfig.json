@@ -12,5 +12,5 @@
       "@clack/core": ["./packages/core/src"]
     }
   },
-  "include": ["packages"]
+  "include": ["packages", "setup.tests.ts"]
 }

@@ -1,14 +1,17 @@
+import { exposeTestUtils } from '../utils';
 import Prompt, { PromptOptions } from './prompt';
 
-interface MultiSelectOptions<T extends { value: any }> extends PromptOptions<MultiSelectPrompt<T>> {
+export interface MultiSelectOptions<T extends { value: any }>
+	extends PromptOptions<MultiSelectPrompt<T>> {
 	options: T[];
 	initialValues?: T['value'][];
 	required?: boolean;
 	cursorAt?: T['value'];
 }
+
 export default class MultiSelectPrompt<T extends { value: any }> extends Prompt {
-	options: T[];
-	cursor: number = 0;
+	public options: T[];
+	public cursor: number;
 
 	private get _value() {
 		return this.options[this.cursor].value;
@@ -30,14 +33,18 @@ export default class MultiSelectPrompt<T extends { value: any }> extends Prompt 
 		super(opts, false);
 
 		this.options = opts.options;
-		this.value = [...(opts.initialValues ?? [])];
+		this.value = opts.initialValues ?? [];
 		this.cursor = Math.max(
 			this.options.findIndex(({ value }) => value === opts.cursorAt),
 			0
 		);
+
+		this.exposeTestUtils();
+
 		this.on('key', (char) => {
 			if (char === 'a') {
 				this.toggleAll();
+				this.exposeTestUtils();
 			}
 		});
 
@@ -55,6 +62,19 @@ export default class MultiSelectPrompt<T extends { value: any }> extends Prompt 
 					this.toggleValue();
 					break;
 			}
+			this.exposeTestUtils();
+		});
+	}
+
+	private exposeTestUtils() {
+		exposeTestUtils<MultiSelectPrompt<any>>({
+			options: this.options,
+			cursor: this.cursor,
+			value: this.value,
+			setCursor: (cursor) => {
+				this.cursor = cursor;
+				this.exposeTestUtils();
+			},
 		});
 	}
 }

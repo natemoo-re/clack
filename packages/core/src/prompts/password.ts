@@ -1,26 +1,40 @@
 import color from 'picocolors';
+import { exposeTestUtils } from '../utils';
 import Prompt, { PromptOptions } from './prompt';
 
-interface PasswordOptions extends PromptOptions<PasswordPrompt> {
+export interface PasswordOptions extends PromptOptions<PasswordPrompt> {
 	mask?: string;
 }
+
 export default class PasswordPrompt extends Prompt {
-	valueWithCursor = '';
-	private _mask = '•';
+	public valueWithCursor: string;
+
+	private _mask: string;
+
 	get cursor() {
 		return this._cursor;
 	}
-	get masked() {
+
+	get masked(): string {
 		return this.value.replaceAll(/./g, this._mask);
 	}
+
 	constructor({ mask, ...opts }: PasswordOptions) {
-		super(opts);
+		super(opts, true);
+
+		this.value = '';
 		this._mask = mask ?? '•';
+		this.valueWithCursor = this.masked + color.inverse(color.hidden('_'));
+
+		this.exposeTestUtils();
 
 		this.on('finalize', () => {
 			this.valueWithCursor = this.masked;
+			this.exposeTestUtils();
 		});
-		this.on('value', () => {
+
+		this.on('value', (value) => {
+			this.value = value;
 			if (this.cursor >= this.value.length) {
 				this.valueWithCursor = `${this.masked}${color.inverse(color.hidden('_'))}`;
 			} else {
@@ -28,6 +42,15 @@ export default class PasswordPrompt extends Prompt {
 				const s2 = this.masked.slice(this.cursor);
 				this.valueWithCursor = `${s1}${color.inverse(s2[0])}${s2.slice(1)}`;
 			}
+			this.exposeTestUtils();
+		});
+	}
+
+	private exposeTestUtils() {
+		exposeTestUtils<PasswordPrompt>({
+			cursor: this.cursor,
+			masked: this.masked,
+			valueWithCursor: this.valueWithCursor,
 		});
 	}
 }

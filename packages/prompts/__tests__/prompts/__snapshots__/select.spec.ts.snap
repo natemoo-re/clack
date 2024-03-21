@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`select should render initial state 1`] = `
+"[90m│[39m
+[36m◆[39m  test message
+[36m│[39m  [32m●[39m foo
+[36m│[39m  [2m○[22m [2mbar[22m
+[36m│[39m  [2m○[22m [2mbaz[22m
+[36m└[39m
+"
+`;
+
+exports[`select should render initial state with initialValue 1`] = `
+"[90m│[39m
+[36m◆[39m  test message
+[36m│[39m  [2m○[22m [2mfoo[22m
+[36m│[39m  [32m●[39m bar
+[36m│[39m  [2m○[22m [2mbaz[22m
+[36m└[39m
+"
+`;

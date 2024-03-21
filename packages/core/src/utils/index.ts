@@ -1,10 +1,30 @@
-import type { Key } from 'node:readline';
-
+import { platform } from 'node:os';
 import { stdin, stdout } from 'node:process';
+import type { Key } from 'node:readline';
 import * as readline from 'node:readline';
+import { Readable } from 'node:stream';
 import { cursor } from 'sisteransi';
+import { hasAliasKey } from './aliases';
 
-const isWindows = globalThis.process.platform.startsWith('win');
+export * from './aliases';
+export * from './mock';
+export * from './string';
+
+export const CANCEL_SYMBOL = Symbol('clack:cancel');
+
+export function isCancel(value: unknown): value is symbol {
+	return value === CANCEL_SYMBOL;
+}
+
+export function setRawMode(input: Readable, value: boolean) {
+	const i = input as typeof stdin;
+
+	if (i.isTTY) i.setRawMode(value);
+}
+
+function isWindows(): boolean {
+	return platform().startsWith('win');
+}
 
 export function block({
 	input = stdin,
@@ -21,9 +41,9 @@ export function block({
 	readline.emitKeypressEvents(input, rl);
 	if (input.isTTY) input.setRawMode(true);
 
-	const clear = (data: Buffer, { name }: Key) => {
+	const clear = (data: Buffer, { name, sequence }: Key) => {
 		const str = String(data);
-		if (str === '\x03') {
+		if (hasAliasKey([str, name, sequence], 'cancel')) {
 			process.exit(0);
 		}
 		if (!overwrite) return;
@@ -36,15 +56,15 @@ export function block({
 			});
 		});
 	};
-	if (hideCursor) process.stdout.write(cursor.hide);
+	if (hideCursor) output.write(cursor.hide);
 	input.once('keypress', clear);
 
 	return () => {
 		input.off('keypress', clear);
-		if (hideCursor) process.stdout.write(cursor.show);
+		if (hideCursor) output.write(cursor.show);
 
 		// Prevent Windows specific issues: https://github.com/natemoo-re/clack/issues/176
-		if (input.isTTY && !isWindows) input.setRawMode(false);
+		if (input.isTTY && !isWindows()) input.setRawMode(false);
 
 		// @ts-expect-error fix for https://github.com/nodejs/node/issues/31762#issuecomment-1441223907
 		rl.terminal = false;
