@@ -565,7 +565,7 @@ export const groupMultiselect = <Value>(opts: GroupMultiSelectOptions<Value>) =>
 };
 
 const strip = (str: string) => str.replace(ansiRegex(), '');
-export const note = (message = '', title = '') => {
+export const note = (message = '', title = '', code: number = 0) => {
 	const lines = `\n${message}\n`.split('\n');
 	const titleLen = strip(title).length;
 	const len =
@@ -584,8 +584,12 @@ export const note = (message = '', title = '') => {
 				)}`
 		)
 		.join('\n');
+	const step =
+		code === 0
+			? color.green(S_STEP_SUBMIT)
+			: color.green(S_SUCCESS)
 	process.stdout.write(
-		`${color.gray(S_BAR)}\n${color.green(S_STEP_SUBMIT)}  ${color.reset(title)} ${color.gray(
+		`${color.gray(S_BAR)}\n${step}  ${color.reset(title)} ${color.gray(
 			S_BAR_H.repeat(Math.max(len - titleLen - 1, 1)) + S_CORNER_TOP_RIGHT
 		)}\n${msg}\n${color.gray(S_CONNECT_LEFT + S_BAR_H.repeat(len + 2) + S_CORNER_BOTTOM_RIGHT)}\n`
 	);
@@ -700,6 +704,8 @@ export const spinner = () => {
 				? color.green(S_STEP_SUBMIT)
 				: code === 1
 				? color.red(S_STEP_CANCEL)
+				: code === 2
+				? color.green(S_SUCCESS)
 				: color.red(S_STEP_ERROR);
 		process.stdout.write(cursor.move(-999, 0));
 		process.stdout.write(erase.down(1));
