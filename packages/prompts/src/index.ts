@@ -6,6 +6,7 @@ import {
 	MultiSelectPrompt,
 	PasswordPrompt,
 	SelectKeyPrompt,
+	SelectPathPrompt,
 	SelectPrompt,
 	State,
 	TextPrompt
@@ -812,4 +813,84 @@ export const tasks = async (tasks: Task[]) => {
 		const result = await task.task(s.message);
 		s.stop(result || task.title);
 	}
+};
+
+interface PathNode {
+	index: number;
+	depth: number;
+	path: string;
+	name: string;
+	children: PathNode[] | undefined;
+}
+
+interface SelectPathOptions {
+	message: string;
+	/**
+	 * Starting absolute path
+	 * @default process.cwd() // current working dir
+	 */
+	initialValue?: string;
+	validate?: (value: string) => string | void;
+	/**
+	 * Exclude files from options
+	 * @default false
+	 */
+	onlyShowDir?: boolean;
+	/**
+	 * Limit the number of options that appears at once
+	 */
+	maxItems?: number;
+}
+
+export const selectPath = (opts: SelectPathOptions) => {
+	return new SelectPathPrompt({
+		initialValue: opts.initialValue,
+		onlyShowDir: opts.onlyShowDir,
+		validate: opts.validate,
+		render() {
+			const title = [color.gray(S_BAR), `${symbol(this.state)}  ${opts.message}`].join('\n');
+
+			switch (this.state) {
+				case 'submit':
+					return [title, `${color.gray(S_BAR)}  ${color.dim(this.value)}`].join('\n');
+				case 'cancel':
+					return [
+						title,
+						`${color.gray(S_BAR)}  ${color.dim(color.strikethrough(this.value))}\n${color.gray(
+							S_BAR
+						)}`,
+					].join('\n');
+				case 'error':
+					return [
+						title,
+						`${color.yellow(S_BAR)}  ${this.value}`,
+						`${color.yellow(S_BAR_END)}  ${color.yellow(this.error)}\n`,
+					].join('\n');
+				default:
+					return [
+						title,
+						`${color.cyan(S_BAR)}  ` +
+							limitOptions({
+								cursor: this.cursor,
+								maxItems: opts.maxItems,
+								options: this.options.map((option) => {
+									return [
+										' '.repeat(option.depth),
+										option.depth === this.currentOption.depth &&
+										option.index === this.currentOption.index
+											? color.green(S_RADIO_ACTIVE)
+											: color.dim(S_RADIO_INACTIVE),
+										' ',
+										option.name,
+										' ',
+										option.children ? (option.children.length ? `v` : `>`) : undefined,
+									].join('');
+								}),
+								style: (option) => option,
+							}).join(`\n${color.cyan(S_BAR)}  `),
+						color.cyan(S_BAR_END),
+					].join('\n');
+			}
+		},
+	}).prompt();
 };
