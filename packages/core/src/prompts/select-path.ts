@@ -20,12 +20,6 @@ export default class SelectPathPrompt extends Prompt {
 	public currentLayer: PathNode[];
 	public currentOption: PathNode;
 
-	private _cursorMap: number[];
-
-	public get cursor(): number {
-		return this._cursorMap.reduce((a, b) => a + b + 1, 0);
-	}
-
 	public get options(): PathNode[] {
 		const options: PathNode[] = [];
 
@@ -42,13 +36,24 @@ export default class SelectPathPrompt extends Prompt {
 		return options;
 	}
 
-	private _changeValue(): void {
-		this.value = this.currentOption.path;
+	public get cursor(): number {
+		return this.options.indexOf(this.currentOption);
 	}
 
 	private _changeCursor(index: number): void {
-		this._cursorMap[this._cursorMap.length - 1] = index;
 		this.currentOption = this.currentLayer[index];
+	}
+
+	private _search(value: string): void {
+		const search = value.normalize('NFC').toLowerCase();
+		if (search) {
+			const foundOption = this.currentLayer.find((option) =>
+				option.name.normalize('NFC').toLowerCase().startsWith(search)
+			);
+			if (foundOption) {
+				this._changeCursor(foundOption.index);
+			}
+		}
 	}
 
 	private _changeLayer(depth: number): void {
@@ -58,12 +63,10 @@ export default class SelectPathPrompt extends Prompt {
 				this._mapDir(this.currentOption.path, this.currentOption.depth + 1);
 			this.currentOption.children = children;
 			if (children?.length) {
-				this._cursorMap = [...this._cursorMap, 0];
 				this.currentLayer = children;
 				this.currentOption = children[0];
 			}
 		} else if (depth < this.currentOption.depth) {
-			this._cursorMap = this._cursorMap.slice(0, -1);
 			if (this.currentOption.depth === 0) {
 				const newRootPath = path.resolve(this.currentOption.path, '..');
 				this.root = {
@@ -83,7 +86,9 @@ export default class SelectPathPrompt extends Prompt {
 					(option) => option.depth === this.currentOption.depth - 1
 				);
 				this.currentLayer = prevChildren;
-				this.currentOption = prevChildren[this._cursorMap[this._cursorMap.length - 1]];
+				this.currentOption =
+					prevChildren.find((child) => child.children?.includes(this.currentOption)) ??
+					prevChildren[0];
 				this.currentOption.children = this.currentOption.children && [];
 			}
 		}
@@ -107,7 +112,7 @@ export default class SelectPathPrompt extends Prompt {
 	}
 
 	constructor(opts: SelectPathOptions) {
-		super(opts, false);
+		super(opts, true);
 
 		const cwd = opts.initialValue ?? process.cwd();
 		const initialLayer = this._mapDir(cwd, 1);
@@ -121,9 +126,11 @@ export default class SelectPathPrompt extends Prompt {
 		this.currentLayer = initialLayer;
 		this.currentOption = initialLayer[0];
 		this.onlyShowDir = opts.onlyShowDir ?? false;
-		this._cursorMap = [0];
 
-		this._changeValue();
+		this.on('key', () => {
+			this.value = this.value.replace(opts.initialValue, '');
+			this._search(this.value);
+		});
 
 		this.on('cursor', (key) => {
 			switch (key) {
@@ -152,11 +159,10 @@ export default class SelectPathPrompt extends Prompt {
 					this._changeLayer(this.currentOption.depth - 1);
 					break;
 			}
-			this._changeValue();
 		});
 
 		this.on('finalize', () => {
-			this.value = this.value ? path.resolve(this.value) : '';
+			this.value = this.currentOption.path;
 		});
 	}
 }
