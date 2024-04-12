@@ -41,7 +41,10 @@ export default class SelectPathPrompt extends Prompt {
 	}
 
 	private _changeCursor(index: number): void {
-		this.currentOption = this.currentLayer[index];
+		const firstIndex = 0;
+		const lastIndex = this.currentLayer.length - 1;
+		const nextIndex = index > lastIndex ? firstIndex : index < firstIndex ? lastIndex : index;
+		this.currentOption = this.currentLayer[nextIndex];
 	}
 
 	private _search(value: string): void {
@@ -136,27 +139,19 @@ export default class SelectPathPrompt extends Prompt {
 			switch (key) {
 				case 'up':
 					if (this.currentLayer.length > 1) {
-						const firstIndex = 0;
-						const currentIndex = this.currentOption.index;
-						const lastIndex = this.currentLayer.length - 1;
-						const prevIndex = this.currentOption.index - 1;
-						this._changeCursor(currentIndex === firstIndex ? lastIndex : prevIndex);
+						this._changeCursor(this.currentOption.index - 1);
 					}
 					break;
 				case 'down':
 					if (this.currentLayer.length > 1) {
-						const firstIndex = 0;
-						const currentIndex = this.currentOption.index;
-						const lastIndex = this.currentLayer.length - 1;
-						const nextIndex = this.currentOption.index + 1;
-						this._changeCursor(currentIndex === lastIndex ? firstIndex : nextIndex);
+						this._changeCursor(this.currentOption.index + 1);
 					}
-					break;
-				case 'right':
-					this._changeLayer(this.currentOption.depth + 1);
 					break;
 				case 'left':
 					this._changeLayer(this.currentOption.depth - 1);
+					break;
+				case 'right':
+					this._changeLayer(this.currentOption.depth + 1);
 					break;
 			}
 		});
