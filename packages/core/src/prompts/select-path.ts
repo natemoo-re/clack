@@ -7,6 +7,7 @@ interface PathNode {
 	depth: number;
 	path: string;
 	name: string;
+	parent: PathNode | undefined;
 	children: PathNode[] | undefined;
 }
 
@@ -59,51 +60,43 @@ export default class SelectPathPrompt extends Prompt {
 		}
 	}
 
-	private _changeLayer(depth: number): void {
-		if (depth > this.currentOption.depth) {
-			const children =
-				this.currentOption.children &&
-				this._mapDir(this.currentOption.path, this.currentOption.depth + 1);
-			this.currentOption.children = children;
-			if (children?.length) {
-				this.currentLayer = children;
-				this.currentOption = children[0];
-			}
-		} else if (depth < this.currentOption.depth) {
-			if (this.currentOption.depth === 0) {
-				const newRootPath = path.resolve(this.currentOption.path, '..');
-				this.root = {
-					index: 0,
-					depth: 0,
-					path: newRootPath,
-					name: newRootPath,
-					children: this._mapDir(newRootPath, 1),
-				};
-				this.currentLayer = [this.root];
-				this.currentOption = this.root;
-			} else if (this.currentOption.depth === 1) {
-				this.currentLayer = [this.root];
-				this.currentOption = this.root;
-			} else {
-				const prevChildren = this.options.filter(
-					(option) => option.depth === this.currentOption.depth - 1
-				);
-				this.currentLayer = prevChildren;
-				this.currentOption =
-					prevChildren.find((child) => child.children?.includes(this.currentOption)) ??
-					prevChildren[0];
-				this.currentOption.children = this.currentOption.children && [];
-			}
+	private _enterChildren(): void {
+		const children =
+			this.currentOption.children && this._mapDir(this.currentOption.path, this.currentOption);
+		this.currentOption.children = children;
+		if (children?.length) {
+			this.currentLayer = children;
+			this.currentOption = children[0];
 		}
 	}
 
-	private _mapDir(dirPath: string, depth: number): PathNode[] {
+	private _exitChildren(): void {
+		if (this.currentOption.parent === undefined) {
+			const newRootPath = path.resolve(this.currentOption.path, '..');
+			this.root = this._createRoot(newRootPath);
+			this.currentLayer = [this.root];
+			this.currentOption = this.root;
+		} else if (this.currentOption.parent.path === this.root.path) {
+			this.currentLayer = [this.root];
+			this.currentOption = this.root;
+		} else {
+			const prevChildren = this.currentOption.parent.parent?.children ?? [];
+			this.currentLayer = prevChildren;
+			this.currentOption =
+				prevChildren.find((child) => child.name === this.currentOption.parent?.name) ??
+				prevChildren[0];
+			this.currentOption.children = this.currentOption.children && [];
+		}
+	}
+
+	private _mapDir(dirPath: string, parent?: PathNode): PathNode[] {
 		return readdirSync(dirPath, { withFileTypes: true })
 			.map(
 				(item, index) =>
 					({
 						index,
-						depth,
+						depth: parent ? parent.depth + 1 : 0,
+						parent,
 						path: path.resolve(dirPath, item.name),
 						name: item.name,
 						children: item.isDirectory() ? [] : undefined,
@@ -114,18 +107,25 @@ export default class SelectPathPrompt extends Prompt {
 			});
 	}
 
+	private _createRoot(path: string): PathNode {
+		const root: PathNode = {
+			index: 0,
+			depth: 0,
+			parent: undefined,
+			path: path,
+			name: path,
+			children: [],
+		};
+		root.children = this._mapDir(path, root);
+		return root;
+	}
+
 	constructor(opts: SelectPathOptions) {
 		super(opts, true);
 
 		const cwd = opts.initialValue ?? process.cwd();
-		const initialLayer = this._mapDir(cwd, 1);
-		this.root = {
-			depth: 0,
-			index: 0,
-			path: cwd,
-			name: cwd,
-			children: initialLayer,
-		};
+		this.root = this._createRoot(cwd);
+		const initialLayer = this.root.children!;
 		this.currentLayer = initialLayer;
 		this.currentOption = initialLayer[0];
 		this.onlyShowDir = opts.onlyShowDir ?? false;
@@ -148,10 +148,10 @@ export default class SelectPathPrompt extends Prompt {
 					}
 					break;
 				case 'left':
-					this._changeLayer(this.currentOption.depth - 1);
+					this._exitChildren();
 					break;
 				case 'right':
-					this._changeLayer(this.currentOption.depth + 1);
+					this._enterChildren();
 					break;
 			}
 		});
