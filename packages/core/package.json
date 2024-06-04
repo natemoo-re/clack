@@ -57,6 +57,7 @@
     "sisteransi": "^1.0.5"
   },
   "devDependencies": {
+    "vitest": "^1.6.0",
     "wrap-ansi": "^8.1.0"
   }
 }

@@ -24,7 +24,9 @@ export function block({
 	const clear = (data: Buffer, { name }: Key) => {
 		const str = String(data);
 		if (str === '\x03') {
+			if (hideCursor) output.write(cursor.show);
 			process.exit(0);
+			return;
 		}
 		if (!overwrite) return;
 		let dx = name === 'return' ? 0 : -1;
@@ -36,12 +38,12 @@ export function block({
 			});
 		});
 	};
-	if (hideCursor) process.stdout.write(cursor.hide);
+	if (hideCursor) output.write(cursor.hide);
 	input.once('keypress', clear);
 
 	return () => {
 		input.off('keypress', clear);
-		if (hideCursor) process.stdout.write(cursor.show);
+		if (hideCursor) output.write(cursor.show);
 
 		// Prevent Windows specific issues: https://github.com/natemoo-re/clack/issues/176
 		if (input.isTTY && !isWindows) input.setRawMode(false);
