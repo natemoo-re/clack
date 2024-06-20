@@ -56,8 +56,13 @@ const meaning = await text({
   placeholder: 'Not sure',
   initialValue: '42',
   validate(value) {
-    if (value.length === 0) return `Value is required!`;
-  },
+    if (value.length === 0) {
+		return {
+			status:'error',
+			message:'Value is required!'
+	    };
+	}
+  }
 });
 ```
 

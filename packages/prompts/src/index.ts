@@ -8,7 +8,8 @@ import {
 	SelectKeyPrompt,
 	SelectPrompt,
 	State,
-	TextPrompt
+	TextPrompt,
+	type ValidateType
 } from '@clack/core';
 import isUnicodeSupported from 'is-unicode-supported';
 import color from 'picocolors';
@@ -21,11 +22,13 @@ const s = (c: string, fallback: string) => (unicode ? c : fallback);
 const S_STEP_ACTIVE = s('◆', '*');
 const S_STEP_CANCEL = s('■', 'x');
 const S_STEP_ERROR = s('▲', 'x');
+const S_STEP_WARN = s('➤', '!');
 const S_STEP_SUBMIT = s('◇', 'o');
 
 const S_BAR_START = s('┌', 'T');
 const S_BAR = s('│', '|');
 const S_BAR_END = s('└', '—');
+
 
 const S_RADIO_ACTIVE = s('●', '>');
 const S_RADIO_INACTIVE = s('○', ' ');
@@ -52,7 +55,9 @@ const symbol = (state: State) => {
 		case 'cancel':
 			return color.red(S_STEP_CANCEL);
 		case 'error':
-			return color.yellow(S_STEP_ERROR);
+			return color.red(S_STEP_ERROR);
+		case 'warn':
+			return color.yellow(S_STEP_WARN);
 		case 'submit':
 			return color.green(S_STEP_SUBMIT);
 	}
@@ -100,7 +105,7 @@ export interface TextOptions {
 	placeholder?: string;
 	defaultValue?: string;
 	initialValue?: string;
-	validate?: (value: string) => string | void;
+	validate?: ValidateType;
 }
 export const text = (opts: TextOptions) => {
 	return new TextPrompt({
@@ -117,9 +122,13 @@ export const text = (opts: TextOptions) => {
 
 			switch (this.state) {
 				case 'error':
+					return `${title.trim()}\n${color.red(S_BAR)}  ${value}\n${color.red(
+						S_BAR_END
+					)}  ${color.red(this.error)}\n`;
+				case 'warn':
 					return `${title.trim()}\n${color.yellow(S_BAR)}  ${value}\n${color.yellow(
 						S_BAR_END
-					)}  ${color.yellow(this.error)}\n`;
+					)}  ${color.yellow(this.warn)}\n`;
 				case 'submit':
 					return `${title}${color.gray(S_BAR)}  ${color.dim(this.value || opts.placeholder)}`;
 				case 'cancel':
@@ -136,7 +145,7 @@ export const text = (opts: TextOptions) => {
 export interface PasswordOptions {
 	message: string;
 	mask?: string;
-	validate?: (value: string) => string | void;
+	validate?: ValidateType;
 }
 export const password = (opts: PasswordOptions) => {
 	return new PasswordPrompt({
@@ -149,15 +158,18 @@ export const password = (opts: PasswordOptions) => {
 
 			switch (this.state) {
 				case 'error':
+					return `${title.trim()}\n${color.red(S_BAR)}  ${masked}\n${color.red(
+						S_BAR_END
+					)}  ${color.red(this.error)}\n`;
+				case 'warn':
 					return `${title.trim()}\n${color.yellow(S_BAR)}  ${masked}\n${color.yellow(
 						S_BAR_END
-					)}  ${color.yellow(this.error)}\n`;
+					)}  ${color.yellow(this.warn)}\n`;
 				case 'submit':
 					return `${title}${color.gray(S_BAR)}  ${color.dim(masked)}`;
 				case 'cancel':
-					return `${title}${color.gray(S_BAR)}  ${color.strikethrough(color.dim(masked ?? ''))}${
-						masked ? '\n' + color.gray(S_BAR) : ''
-					}`;
+					return `${title}${color.gray(S_BAR)}  ${color.strikethrough(color.dim(masked ?? ''))}${masked ? '\n' + color.gray(S_BAR) : ''
+						}`;
 				default:
 					return `${title}${color.cyan(S_BAR)}  ${value}\n${color.cyan(S_BAR_END)}\n`;
 			}
@@ -190,15 +202,13 @@ export const confirm = (opts: ConfirmOptions) => {
 						color.dim(value)
 					)}\n${color.gray(S_BAR)}`;
 				default: {
-					return `${title}${color.cyan(S_BAR)}  ${
-						this.value
-							? `${color.green(S_RADIO_ACTIVE)} ${active}`
-							: `${color.dim(S_RADIO_INACTIVE)} ${color.dim(active)}`
-					} ${color.dim('/')} ${
-						!this.value
+					return `${title}${color.cyan(S_BAR)}  ${this.value
+						? `${color.green(S_RADIO_ACTIVE)} ${active}`
+						: `${color.dim(S_RADIO_INACTIVE)} ${color.dim(active)}`
+						} ${color.dim('/')} ${!this.value
 							? `${color.green(S_RADIO_ACTIVE)} ${inactive}`
 							: `${color.dim(S_RADIO_INACTIVE)} ${color.dim(inactive)}`
-					}\n${color.cyan(S_BAR_END)}\n`;
+						}\n${color.cyan(S_BAR_END)}\n`;
 				}
 			}
 		},
@@ -225,9 +235,8 @@ export const select = <Value>(opts: SelectOptions<Value>) => {
 			case 'selected':
 				return `${color.dim(label)}`;
 			case 'active':
-				return `${color.green(S_RADIO_ACTIVE)} ${label} ${
-					option.hint ? color.dim(`(${option.hint})`) : ''
-				}`;
+				return `${color.green(S_RADIO_ACTIVE)} ${label} ${option.hint ? color.dim(`(${option.hint})`) : ''
+					}`;
 			case 'cancelled':
 				return `${color.strikethrough(color.dim(label))}`;
 			default:
@@ -240,7 +249,6 @@ export const select = <Value>(opts: SelectOptions<Value>) => {
 		initialValue: opts.initialValue,
 		render() {
 			const title = `${color.gray(S_BAR)}\n${symbol(this.state)}  ${opts.message}\n`;
-
 			switch (this.state) {
 				case 'submit':
 					return `${title}${color.gray(S_BAR)}  ${opt(this.options[this.cursor], 'selected')}`;
@@ -273,13 +281,11 @@ export const selectKey = <Value extends string>(opts: SelectOptions<Value>) => {
 		} else if (state === 'cancelled') {
 			return `${color.strikethrough(color.dim(label))}`;
 		} else if (state === 'active') {
-			return `${color.bgCyan(color.gray(` ${option.value} `))} ${label} ${
-				option.hint ? color.dim(`(${option.hint})`) : ''
-			}`;
+			return `${color.bgCyan(color.gray(` ${option.value} `))} ${label} ${option.hint ? color.dim(`(${option.hint})`) : ''
+				}`;
 		}
-		return `${color.gray(color.bgWhite(color.inverse(` ${option.value} `)))} ${label} ${
-			option.hint ? color.dim(`(${option.hint})`) : ''
-		}`;
+		return `${color.gray(color.bgWhite(color.inverse(` ${option.value} `)))} ${label} ${option.hint ? color.dim(`(${option.hint})`) : ''
+			}`;
 	};
 
 	return new SelectKeyPrompt({
@@ -323,17 +329,15 @@ export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 	) => {
 		const label = option.label ?? String(option.value);
 		if (state === 'active') {
-			return `${color.cyan(S_CHECKBOX_ACTIVE)} ${label} ${
-				option.hint ? color.dim(`(${option.hint})`) : ''
-			}`;
+			return `${color.cyan(S_CHECKBOX_ACTIVE)} ${label} ${option.hint ? color.dim(`(${option.hint})`) : ''
+				}`;
 		} else if (state === 'selected') {
 			return `${color.green(S_CHECKBOX_SELECTED)} ${color.dim(label)}`;
 		} else if (state === 'cancelled') {
 			return `${color.strikethrough(color.dim(label))}`;
 		} else if (state === 'active-selected') {
-			return `${color.green(S_CHECKBOX_SELECTED)} ${label} ${
-				option.hint ? color.dim(`(${option.hint})`) : ''
-			}`;
+			return `${color.green(S_CHECKBOX_SELECTED)} ${label} ${option.hint ? color.dim(`(${option.hint})`) : ''
+				}`;
 		} else if (state === 'submitted') {
 			return `${color.dim(label)}`;
 		}
@@ -347,13 +351,16 @@ export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 		cursorAt: opts.cursorAt,
 		validate(selected: Value[]) {
 			if (this.required && selected.length === 0)
-				return `Please select at least one option.\n${color.reset(
-					color.dim(
-						`Press ${color.gray(color.bgWhite(color.inverse(' space ')))} to select, ${color.gray(
-							color.bgWhite(color.inverse(' enter '))
-						)} to submit`
-					)
-				)}`;
+				return {
+					status: 'error',
+					message: `Please select at least one option.\n${color.reset(
+						color.dim(
+							`Press ${color.gray(color.bgWhite(color.inverse(' space ')))} to select, ${color.gray(
+								color.bgWhite(color.inverse(' enter '))
+							)} to submit`
+						)
+					)}`
+				};
 		},
 		render() {
 			let title = `${color.gray(S_BAR)}\n${symbol(this.state)}  ${opts.message}\n`;
@@ -371,39 +378,37 @@ export const multiselect = <Value>(opts: MultiSelectOptions<Value>) => {
 
 			switch (this.state) {
 				case 'submit': {
-					return `${title}${color.gray(S_BAR)}  ${
-						this.options
-							.filter(({ value }) => this.value.includes(value))
-							.map((option) => opt(option, 'submitted'))
-							.join(color.dim(', ')) || color.dim('none')
-					}`;
+					return `${title}${color.gray(S_BAR)}  ${this.options
+						.filter(({ value }) => this.value.includes(value))
+						.map((option) => opt(option, 'submitted'))
+						.join(color.dim(', ')) || color.dim('none')
+						}`;
 				}
 				case 'cancel': {
 					const label = this.options
 						.filter(({ value }) => this.value.includes(value))
 						.map((option) => opt(option, 'cancelled'))
 						.join(color.dim(', '));
-					return `${title}${color.gray(S_BAR)}  ${
-						label.trim() ? `${label}\n${color.gray(S_BAR)}` : ''
-					}`;
+					return `${title}${color.gray(S_BAR)}  ${label.trim() ? `${label}\n${color.gray(S_BAR)}` : ''
+						}`;
 				}
 				case 'error': {
 					const footer = this.error
 						.split('\n')
 						.map((ln, i) =>
-							i === 0 ? `${color.yellow(S_BAR_END)}  ${color.yellow(ln)}` : `   ${ln}`
+							i === 0 ? `${color.red(S_BAR_END)}  ${color.red(ln)}` : `   ${ln}`
 						)
 						.join('\n');
 					return (
 						title +
-						color.yellow(S_BAR) +
+						color.red(S_BAR) +
 						'  ' +
 						limitOptions({
 							options: this.options,
 							cursor: this.cursor,
 							maxItems: opts.maxItems,
 							style: styleOption,
-						}).join(`\n${color.yellow(S_BAR)}  `) +
+						}).join(`\n${color.red(S_BAR)}  `) +
 						'\n' +
 						footer +
 						'\n'
@@ -450,9 +455,8 @@ export const groupMultiselect = <Value>(opts: GroupMultiSelectOptions<Value>) =>
 		const prefix = isItem ? `${isLast ? S_BAR_END : S_BAR} ` : '';
 
 		if (state === 'active') {
-			return `${color.dim(prefix)}${color.cyan(S_CHECKBOX_ACTIVE)} ${label} ${
-				option.hint ? color.dim(`(${option.hint})`) : ''
-			}`;
+			return `${color.dim(prefix)}${color.cyan(S_CHECKBOX_ACTIVE)} ${label} ${option.hint ? color.dim(`(${option.hint})`) : ''
+				}`;
 		} else if (state === 'group-active') {
 			return `${prefix}${color.cyan(S_CHECKBOX_ACTIVE)} ${color.dim(label)}`;
 		} else if (state === 'group-active-selected') {
@@ -462,9 +466,8 @@ export const groupMultiselect = <Value>(opts: GroupMultiSelectOptions<Value>) =>
 		} else if (state === 'cancelled') {
 			return `${color.strikethrough(color.dim(label))}`;
 		} else if (state === 'active-selected') {
-			return `${color.dim(prefix)}${color.green(S_CHECKBOX_SELECTED)} ${label} ${
-				option.hint ? color.dim(`(${option.hint})`) : ''
-			}`;
+			return `${color.dim(prefix)}${color.green(S_CHECKBOX_SELECTED)} ${label} ${option.hint ? color.dim(`(${option.hint})`) : ''
+				}`;
 		} else if (state === 'submitted') {
 			return `${color.dim(label)}`;
 		}
@@ -478,13 +481,16 @@ export const groupMultiselect = <Value>(opts: GroupMultiSelectOptions<Value>) =>
 		cursorAt: opts.cursorAt,
 		validate(selected: Value[]) {
 			if (this.required && selected.length === 0)
-				return `Please select at least one option.\n${color.reset(
-					color.dim(
-						`Press ${color.gray(color.bgWhite(color.inverse(' space ')))} to select, ${color.gray(
-							color.bgWhite(color.inverse(' enter '))
-						)} to submit`
-					)
-				)}`;
+				return {
+					status: 'error',
+					message: `Please select at least one option.\n${color.reset(
+						color.dim(
+							`Press ${color.gray(color.bgWhite(color.inverse(' space ')))} to select, ${color.gray(
+								color.bgWhite(color.inverse(' enter '))
+							)} to submit`
+						)
+					)}`
+				};
 		},
 		render() {
 			let title = `${color.gray(S_BAR)}\n${symbol(this.state)}  ${opts.message}\n`;
@@ -501,18 +507,17 @@ export const groupMultiselect = <Value>(opts: GroupMultiSelectOptions<Value>) =>
 						.filter(({ value }) => this.value.includes(value))
 						.map((option) => opt(option, 'cancelled'))
 						.join(color.dim(', '));
-					return `${title}${color.gray(S_BAR)}  ${
-						label.trim() ? `${label}\n${color.gray(S_BAR)}` : ''
-					}`;
+					return `${title}${color.gray(S_BAR)}  ${label.trim() ? `${label}\n${color.gray(S_BAR)}` : ''
+						}`;
 				}
 				case 'error': {
 					const footer = this.error
 						.split('\n')
 						.map((ln, i) =>
-							i === 0 ? `${color.yellow(S_BAR_END)}  ${color.yellow(ln)}` : `   ${ln}`
+							i === 0 ? `${color.red(S_BAR_END)}  ${color.red(ln)}` : `   ${ln}`
 						)
 						.join('\n');
-					return `${title}${color.yellow(S_BAR)}  ${this.options
+					return `${title}${color.red(S_BAR)}  ${this.options
 						.map((option, i, options) => {
 							const selected =
 								this.value.includes(option.value) ||
@@ -533,7 +538,7 @@ export const groupMultiselect = <Value>(opts: GroupMultiSelectOptions<Value>) =>
 							}
 							return opt(option, active ? 'active' : 'inactive', options);
 						})
-						.join(`\n${color.yellow(S_BAR)}  `)}\n${footer}\n`;
+						.join(`\n${color.red(S_BAR)}  `)}\n${footer}\n`;
 				}
 				default: {
 					return `${title}${color.cyan(S_BAR)}  ${this.options
@@ -699,8 +704,8 @@ export const spinner = () => {
 			code === 0
 				? color.green(S_STEP_SUBMIT)
 				: code === 1
-				? color.red(S_STEP_CANCEL)
-				: color.red(S_STEP_ERROR);
+					? color.red(S_STEP_CANCEL)
+					: color.red(S_STEP_ERROR);
 		process.stdout.write(cursor.move(-999, 0));
 		process.stdout.write(erase.down(1));
 		process.stdout.write(`${step}  ${_message}\n`);

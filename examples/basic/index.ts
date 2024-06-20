@@ -16,16 +16,16 @@ async function main() {
 					message: 'Where should we create your project?',
 					placeholder: './sparkling-solid',
 					validate: (value) => {
-						if (!value) return 'Please enter a path.';
-						if (value[0] !== '.') return 'Please enter a relative path.';
+						if (!value) return { status: 'error', message: 'Please enter a path.' };
+						if (value[0] !== '.') return { status: 'warn', message: 'warn: Relative path may not work' };
 					},
 				}),
 			password: () =>
 				p.password({
 					message: 'Provide a password',
 					validate: (value) => {
-						if (!value) return 'Please enter a password.';
-						if (value.length < 5) return 'Password should have at least 5 characters.';
+						if (!value) return { status: 'error', message: 'Please enter a password.' };
+						if (value.length < 5) return { status: 'warn', message: 'warn: Password security is too low' };
 					},
 				}),
 			type: ({ results }) =>

@@ -38,17 +38,18 @@ const aliases = new Map([
 ]);
 const keys = new Set(['up', 'down', 'left', 'right', 'space', 'enter']);
 
+export type ValidateType = ((value: any) => ({ status: 'error' | 'warn', message: string } | void));
 export interface PromptOptions<Self extends Prompt> {
 	render(this: Omit<Self, 'prompt'>): string | void;
 	placeholder?: string;
 	initialValue?: any;
-	validate?: ((value: any) => string | void) | undefined;
+	validate?: ValidateType;
 	input?: Readable;
 	output?: Writable;
 	debug?: boolean;
 }
 
-export type State = 'initial' | 'active' | 'cancel' | 'submit' | 'error';
+export type State = 'initial' | 'active' | 'cancel' | 'submit' | 'error' | 'warn';
 
 export default class Prompt {
 	protected input: Readable;
@@ -62,6 +63,7 @@ export default class Prompt {
 	public state: State = 'initial';
 	public value: any;
 	public error: string = '';
+	public warn: string = ''
 
 	constructor(
 		{ render, input = stdin, output = stdout, ...opts }: PromptOptions<Prompt>,
@@ -154,9 +156,10 @@ export default class Prompt {
 	}
 
 	private onKeypress(char: string, key?: Key) {
-		if (this.state === 'error') {
+		if ((this.state === 'error' || this.state === 'warn') && key?.name !== 'return') {
 			this.state = 'active';
 		}
+
 		if (key?.name && !this._track && aliases.has(key.name)) {
 			this.emit('cursor', aliases.get(key.name));
 		}
@@ -176,17 +179,27 @@ export default class Prompt {
 			this.emit('key', char.toLowerCase());
 		}
 
+
 		if (key?.name === 'return') {
-			if (this.opts.validate) {
-				const problem = this.opts.validate(this.value);
-				if (problem) {
-					this.error = problem;
-					this.state = 'error';
-					this.rl.write(this.value);
+			if (this.state === 'warn') {
+				this.state = 'submit'
+			} else {
+				if (this.opts.validate) {
+					const problem = this.opts.validate(this.value);
+					if (problem?.status === 'error') {
+						this.error = problem.message;
+						this.state = 'error';
+						this.rl.write(this.value);
+					} else if (problem?.status === 'warn') {
+						this.warn = problem.message;
+						this.state = 'warn';
+						this.rl.write(this.value);
+					} else {
+						this.state = 'submit';
+					}
+				} else {
+					this.state = 'submit';
 				}
-			}
-			if (this.state !== 'error') {
-				this.state = 'submit';
 			}
 		}
 		if (char === '\x03') {
