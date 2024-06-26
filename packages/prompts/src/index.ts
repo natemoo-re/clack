@@ -8,8 +8,8 @@ import {
 	SelectKeyPrompt,
 	SelectPathPrompt,
 	SelectPrompt,
-	State,
-	TextPrompt
+	TextPrompt,
+	type State
 } from '@clack/core';
 import isUnicodeSupported from 'is-unicode-supported';
 import color from 'picocolors';
