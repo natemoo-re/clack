@@ -3,7 +3,7 @@
     "noEmit": true,
     "module": "ESNext",
     "target": "ESNext",
-    "moduleResolution": "Node16",
+    "moduleResolution": "Bundler",
     "moduleDetection": "force",
     "strict": true,
     "esModuleInterop": true,

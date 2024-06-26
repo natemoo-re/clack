@@ -1,6 +1,6 @@
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
-import Prompt, { PromptOptions } from './prompt';
+import Prompt, { type PromptOptions } from './prompt';
 
 interface PathNode {
 	index: number;
