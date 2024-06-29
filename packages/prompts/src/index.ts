@@ -428,8 +428,11 @@ export interface GroupMultiSelectOptions<Value> {
 	initialValues?: Value[];
 	required?: boolean;
 	cursorAt?: Value;
+	selectableGroups?: boolean;
+	spacedGroups?: boolean;
 }
 export const groupMultiselect = <Value>(opts: GroupMultiSelectOptions<Value>) => {
+	const { selectableGroups = false, spacedGroups = false } = opts;
 	const opt = (
 		option: Option<Value>,
 		state:
@@ -447,28 +450,33 @@ export const groupMultiselect = <Value>(opts: GroupMultiSelectOptions<Value>) =>
 		const isItem = typeof (option as any).group === 'string';
 		const next = isItem && (options[options.indexOf(option) + 1] ?? { group: true });
 		const isLast = isItem && (next as any).group === true;
-		const prefix = isItem ? `${isLast ? S_BAR_END : S_BAR} ` : '';
+		const prefix = isItem ? (selectableGroups ? `${isLast ? S_BAR_END : S_BAR} ` : ' ') : '';
+		const spacingPrefix = spacedGroups && !isItem ? `\n${color.cyan(S_BAR)}  ` : '';
 
 		if (state === 'active') {
-			return `${color.dim(prefix)}${color.cyan(S_CHECKBOX_ACTIVE)} ${label} ${
+			return `${spacingPrefix}${color.dim(prefix)}${color.cyan(S_CHECKBOX_ACTIVE)} ${label} ${
 				option.hint ? color.dim(`(${option.hint})`) : ''
 			}`;
 		} else if (state === 'group-active') {
-			return `${prefix}${color.cyan(S_CHECKBOX_ACTIVE)} ${color.dim(label)}`;
+			return `${spacingPrefix}${prefix}${color.cyan(S_CHECKBOX_ACTIVE)} ${color.dim(label)}`;
 		} else if (state === 'group-active-selected') {
-			return `${prefix}${color.green(S_CHECKBOX_SELECTED)} ${color.dim(label)}`;
+			return `${spacingPrefix}${prefix}${color.green(S_CHECKBOX_SELECTED)} ${color.dim(label)}`;
 		} else if (state === 'selected') {
-			return `${color.dim(prefix)}${color.green(S_CHECKBOX_SELECTED)} ${color.dim(label)}`;
+			return `${spacingPrefix}${color.dim(prefix)}${color.green(S_CHECKBOX_SELECTED)} ${color.dim(
+				label
+			)}`;
 		} else if (state === 'cancelled') {
-			return `${color.strikethrough(color.dim(label))}`;
+			return `${spacingPrefix}${color.strikethrough(color.dim(label))}`;
 		} else if (state === 'active-selected') {
-			return `${color.dim(prefix)}${color.green(S_CHECKBOX_SELECTED)} ${label} ${
+			return `${spacingPrefix}${color.dim(prefix)}${color.green(S_CHECKBOX_SELECTED)} ${label} ${
 				option.hint ? color.dim(`(${option.hint})`) : ''
 			}`;
 		} else if (state === 'submitted') {
 			return `${color.dim(label)}`;
 		}
-		return `${color.dim(prefix)}${color.dim(S_CHECKBOX_INACTIVE)} ${color.dim(label)}`;
+		return `${spacingPrefix}${color.dim(prefix)}${
+			isItem || selectableGroups ? `${color.dim(S_CHECKBOX_INACTIVE)} ` : ''
+		}${color.dim(label)}`;
 	};
 
 	return new GroupMultiSelectPrompt({
@@ -476,6 +484,7 @@ export const groupMultiselect = <Value>(opts: GroupMultiSelectOptions<Value>) =>
 		initialValues: opts.initialValues,
 		required: opts.required ?? true,
 		cursorAt: opts.cursorAt,
+		selectableGroups: selectableGroups,
 		validate(selected: Value[]) {
 			if (this.required && selected.length === 0)
 				return `Please select at least one option.\n${color.reset(
